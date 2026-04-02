@@ -37,6 +37,8 @@ async function extractWithAI(rawText: string) {
         "name": "Full Name",
         "email": "Email Address",
         "phone": "Phone Number",
+        "location": "City, Country",
+        "currentSalary": "Salary if mentioned",
         "skills": ["Skill 1", "Skill 2"],
         "experience": [{"title": "Job Title", "company": "Company Name", "duration": "Dates", "description": "Summary"}],
         "education": [{"degree": "Degree Name", "institution": "School Name", "year": "Year"}],
@@ -107,7 +109,7 @@ export async function POST(req: NextRequest) {
         if (storageError) throw storageError;
 
         // Parse content with AI
-        let parsed: any = { rawText: '', embedding: null, name: '', email: '', phone: '', skills: [], experience: [], education: [], summary: '', experienceYears: 0 }
+        let parsed: any = { rawText: '', embedding: null, name: '', email: '', phone: '', location: '', currentSalary: '', skills: [], experience: [], education: [], summary: '', experienceYears: 0 }
         if (['.pdf', '.docx', '.txt'].includes(ext)) {
             parsed = await extractDocumentData(buffer, ext)
         }
@@ -129,7 +131,9 @@ export async function POST(req: NextRequest) {
             parsed_education: JSON.stringify(parsed.education),
             parsed_summary: parsed.parsed_summary || parsed.summary || '',
             experience_years: parsed.experienceYears || parsed.experience_years || 0,
-            status: 'new'
+            status: 'new',
+            location: parsed.location || '',
+            current_salary: parsed.currentSalary || ''
         }).select().single()
 
         if (error) throw error

@@ -11,14 +11,50 @@ export async function GET(req: NextRequest) {
     const status  = searchParams.get('status') || 'all'
     const sort    = searchParams.get('sort')   || 'uploaded_at'
     const order   = searchParams.get('order') === 'asc'
+    
+    // Advanced Filters (Naukri style)
     const skill   = searchParams.get('skill')  || ''
+    const minExp  = parseFloat(searchParams.get('minExp') || '0')
+    const maxExp  = parseFloat(searchParams.get('maxExp') || '50')
+    const location = searchParams.get('location') || ''
+    const keywords = searchParams.get('keywords') || ''
+    const exclude = searchParams.get('exclude')   || ''
 
     const allowedSorts = ['uploaded_at','parsed_name','experience_years','rating','updated_at']
     const safeSort = allowedSorts.includes(sort) ? sort : 'uploaded_at'
 
     let query = supabase.from('resumes').select('id, filename, original_name, file_size, mime_type, parsed_name, parsed_email, parsed_phone, parsed_skills, parsed_education, parsed_summary, experience_years, status, rating, tags, notes, uploaded_at, updated_at', { count: 'exact' })
 
+    // Apply Standard Filters
     if (status !== 'all') query = query.eq('status', status)
+    
+    // Apply Experience Range (Naukri)
+    if (minExp > 0) query = query.gte('experience_years', minExp)
+    if (maxExp < 50) query = query.lte('experience_years', maxExp)
+
+    // Apply Location (Searching in raw_text or location col)
+    if (location) {
+        query = query.or(`raw_text.ilike.%${location}%,parsed_summary.ilike.%${location}%`)
+    }
+
+    // Apply Mandatory Keywords (Boolean logic)
+    if (keywords) {
+        // Simple spaces-to-AND logic: convert "React Python" into multiple filters
+        const kArr = keywords.split(/\s+/).filter(Boolean)
+        for (const k of kArr) {
+            query = query.ilike('raw_text', `%${k}%`)
+        }
+    }
+
+    // Apply Exclude Keywords
+    if (exclude) {
+        const eArr = exclude.split(/\s+/).filter(Boolean)
+        for (const e of eArr) {
+            query = query.not('raw_text', 'ilike', `%${e}%`)
+        }
+    }
+
+    // Apply Legacy Skill filter
     if (skill) query = query.ilike('parsed_skills', `%${skill}%`)
 
     const { data: resumes, error, count } = await query
