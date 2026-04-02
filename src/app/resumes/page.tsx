@@ -26,13 +26,13 @@ interface Resume {
 }
 
 const STATUS_OPTIONS = ['all','new','reviewed','shortlisted','rejected','hired']
-const FOLDERS = ['All','Uncategorized','AI','Software Engineer','Sales','Marketing','Design']
 
 function ResumesContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
   const [resumes, setResumes] = useState<Resume[]>([])
+  const [folders, setFolders] = useState<string[]>(['Uncategorized','AI','Software Engineer','Sales','Marketing','Design'])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(1)
@@ -78,6 +78,27 @@ function ResumesContent() {
     router.push('/resumes?status=all&folder=All&sort=uploaded_at&order=desc')
   }
 
+  const fetchFolders = useCallback(async () => {
+    try {
+      const res = await fetch('/api/folders')
+      const data = await res.json()
+      if (Array.isArray(data)) setFolders(['Uncategorized', ...data.filter(f => f !== 'Uncategorized')])
+    } catch {}
+  }, [])
+
+  const createFolder = async () => {
+    const name = prompt('Enter New Folder Name:')
+    if (!name || name.trim() === '') return
+    try {
+       const res = await fetch('/api/folders', {
+          method: 'POST',
+          body: JSON.stringify({ name }),
+          headers: { 'Content-Type': 'application/json' }
+       })
+       if (res.ok) fetchFolders()
+    } catch (err) { alert('Error creating folder') }
+  }
+
   const fetchResumes = useCallback(async () => {
     setLoading(true)
     const p = new URLSearchParams({ 
@@ -94,7 +115,10 @@ function ResumesContent() {
     setLoading(false)
   }, [page, status, folder, sort, order, skill, minExp, maxExp, loc, kw, excl])
 
-  useEffect(() => { fetchResumes() }, [fetchResumes])
+  useEffect(() => { 
+    fetchFolders()
+    fetchResumes() 
+  }, [fetchResumes, fetchFolders])
 
   const toggleSelect = (id: number) => setSelected(prev => {
     const n = new Set(prev)
@@ -194,7 +218,7 @@ function ResumesContent() {
          <div className="glass rounded-2xl p-5 border-white/5 space-y-4 shadow-xl">
             <h3 className="text-[10px] uppercase font-black text-slate-500 tracking-widest pl-1">Folders</h3>
             <nav className="space-y-1">
-               {FOLDERS.map(f => (
+               {['All', ...folders].map(f => (
                   <button 
                   key={f}
                   onClick={() => setParam('folder', f)}
@@ -208,7 +232,10 @@ function ResumesContent() {
                ))}
             </nav>
             <div className="pt-2">
-               <button className="w-full py-2 border border-dashed border-slate-800 text-slate-600 rounded-xl text-[10px] uppercase font-bold hover:border-slate-600 hover:text-slate-400 transition-colors">
+               <button 
+                onClick={createFolder}
+                className="w-full py-2 border border-dashed border-slate-800 text-slate-600 rounded-xl text-[10px] uppercase font-bold hover:border-slate-600 hover:text-slate-400 transition-colors"
+               >
                   + Create New Folder
                </button>
             </div>
@@ -234,7 +261,7 @@ function ResumesContent() {
                       <Filter size={16} /> Move to...
                    </button>
                    <div className="absolute right-0 top-full mt-2 w-48 glass rounded-xl border-white/10 shadow-2xl invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all z-50 p-1 overflow-hidden">
-                      {FOLDERS.filter(f => f !== 'All').map(f => (
+                      {folders.map(f => (
                          <button 
                            key={f}
                            onClick={() => moveSelectedToFolder(f)}

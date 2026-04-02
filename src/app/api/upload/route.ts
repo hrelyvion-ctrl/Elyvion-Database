@@ -43,7 +43,8 @@ async function extractWithAI(rawText: string) {
         "experience": [{"title": "Job Title", "company": "Company Name", "duration": "Dates", "description": "Summary"}],
         "education": [{"degree": "Degree Name", "institution": "School Name", "year": "Year"}],
         "summary": "Professional summary paragraph",
-        "experienceYears": 0.0
+        "experienceYears": 0.0,
+        "suggestedFolder": "AI | Software Engineer | Sales | Marketing | Design | Uncategorized"
       }
     `
 
@@ -110,10 +111,15 @@ export async function POST(req: NextRequest) {
         if (storageError) throw storageError;
 
         // Parse content with AI
-        let parsed: any = { rawText: '', embedding: null, name: '', email: '', phone: '', location: '', currentSalary: '', skills: [], experience: [], education: [], summary: '', experienceYears: 0 }
+        let parsed: any = { rawText: '', embedding: null, name: '', email: '', phone: '', location: '', currentSalary: '', skills: [], experience: [], education: [], summary: '', experienceYears: 0, suggestedFolder: 'Uncategorized' }
         if (['.pdf', '.docx', '.txt'].includes(ext)) {
             parsed = await extractDocumentData(buffer, ext)
         }
+
+        // AUTO-CATEGORIZATION: Use AI recommendation if user left it as Uncategorized
+        const finalFolder = (folder === 'Uncategorized' && parsed.suggestedFolder) 
+            ? parsed.suggestedFolder 
+            : folder;
 
         // Insert to Supabase Postgres Database
         const { data, error } = await supabase.from('resumes').insert({
@@ -135,7 +141,7 @@ export async function POST(req: NextRequest) {
             status: 'new',
             location: parsed.location || '',
             current_salary: parsed.currentSalary || '',
-            folder: folder
+            folder: finalFolder
         }).select().single()
 
         if (error) throw error

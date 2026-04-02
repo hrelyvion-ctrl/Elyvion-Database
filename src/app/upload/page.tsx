@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Upload, FileText, X, CheckCircle, AlertCircle, Loader2, CloudUpload } from 'lucide-react'
 import Link from 'next/link'
 
@@ -15,9 +15,18 @@ export default function UploadPage() {
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [selectedFolder, setSelectedFolder] = useState('Uncategorized')
+  const [folders, setFolders] = useState<string[]>(['Uncategorized','AI','Software Engineer','Sales','Marketing','Design'])
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const FOLDERS = ['Uncategorized','AI','Software Engineer','Sales','Marketing','Design']
+  const fetchFolders = useCallback(async () => {
+    try {
+      const res = await fetch('/api/folders')
+      const data = await res.json()
+      if (Array.isArray(data)) setFolders(['Uncategorized', ...data.filter(f => f !== 'Uncategorized')])
+    } catch {}
+  }, [])
+
+  useEffect(() => { fetchFolders() }, [fetchFolders])
 
   const addFiles = useCallback((incoming: FileList | null) => {
     if (!incoming) return
@@ -176,7 +185,7 @@ export default function UploadPage() {
             <div className="mb-6 space-y-3">
                <label className="text-[10px] uppercase font-black text-slate-500 tracking-widest ml-1">Target Folder / Category</label>
                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {FOLDERS.map(f => (
+                  {folders.map((f: string) => (
                      <button
                         key={f}
                         onClick={() => setSelectedFolder(f)}
