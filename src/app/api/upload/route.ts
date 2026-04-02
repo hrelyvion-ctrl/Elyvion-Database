@@ -46,6 +46,8 @@ async function extractWithAI(rawText: string) {
         "experienceYears": 0.0,
         "suggestedFolder": "AI | Software Engineer | Sales | Marketing | Design | Uncategorized"
       }
+
+      CRITICAL: Calculate 'experienceYears' by summing up the total professional tenure. If the resume says "5 years of experience", the value is 5.0. If it lists dates, calculate the sum of all durations.
     `
 
     const result = await model.generateContent(prompt)

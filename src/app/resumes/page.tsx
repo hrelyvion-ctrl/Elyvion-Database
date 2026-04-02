@@ -40,6 +40,8 @@ function ResumesContent() {
   const [deleting, setDeleting] = useState(false)
   const [downloadingBulk, setDownloadingBulk] = useState(false)
   const [movingToFolder, setMovingToFolder] = useState(false)
+  const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
 
   const [showFilters, setShowFilters] = useState(false)
   
@@ -86,16 +88,22 @@ function ResumesContent() {
     } catch {}
   }, [])
 
-  const createFolder = async () => {
-    const name = prompt('Enter New Folder Name:')
-    if (!name || name.trim() === '') return
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) return
     try {
        const res = await fetch('/api/folders', {
           method: 'POST',
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ name: newFolderName }),
           headers: { 'Content-Type': 'application/json' }
        })
-       if (res.ok) fetchFolders()
+       if (res.ok) {
+         fetchFolders()
+         setIsNewFolderModalOpen(false)
+         setNewFolderName('')
+       } else {
+         const d = await res.json()
+         alert('Error: ' + (d.error || 'Failed to create folder. (Have you run the SQL?)'))
+       }
     } catch (err) { alert('Error creating folder') }
   }
 
@@ -122,7 +130,8 @@ function ResumesContent() {
 
   const toggleSelect = (id: number) => setSelected(prev => {
     const n = new Set(prev)
-    n.has(id) ? n.delete(id) : n.add(id)
+    if (n.has(id)) n.delete(id)
+    else n.add(id)
     return n
   })
 
@@ -132,88 +141,83 @@ function ResumesContent() {
   }
 
   const deleteSelected = async () => {
-    if (selected.size === 0) return
-    if (!confirm(`Delete ${selected.size} resume(s)?`)) return
+    if (!confirm(`Delete ${selected.size} resumes?`)) return
     setDeleting(true)
-    await fetch('/api/resumes', { method: 'DELETE', body: JSON.stringify({ ids: Array.from(selected) }), headers: { 'Content-Type': 'application/json' } })
-    setSelected(new Set())
-    fetchResumes()
+    try {
+      await fetch('/api/resumes', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selected) })
+      })
+      setSelected(new Set())
+      fetchResumes()
+    } catch {}
     setDeleting(false)
   }
 
-  const moveSelectedToFolder = async (folderName: string) => {
-     if (selected.size === 0) return
+  const moveSelectedToFolder = async (targetFolder: string) => {
      setMovingToFolder(true)
-     // To keep things simple without a new mass-update endpoint right now, we can update them individually or just inform the user.
-     // Better: Call an (imaginary for now, but I'll create it) patch endpoint.
-     const res = await fetch('/api/resumes/bulk-update', {
-         method: 'PATCH',
-         body: JSON.stringify({ ids: Array.from(selected), updates: { folder: folderName } }),
-         headers: { 'Content-Type': 'application/json' }
-     })
-     if (res.ok) {
+     try {
+        await fetch('/api/resumes/bulk-update', {
+           method: 'PATCH',
+           body: JSON.stringify({ ids: Array.from(selected), updates: { folder: targetFolder } }),
+           headers: { 'Content-Type': 'application/json' }
+        })
         setSelected(new Set())
         fetchResumes()
-     }
+     } catch {}
      setMovingToFolder(false)
   }
 
   const downloadSelected = async () => {
-    if (selected.size === 0) return
     setDownloadingBulk(true)
-    try {
-      const zip = new JSZip()
-      const SUBAPSE_STORAGE_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/resumes/`
-
-      for (const id of Array.from(selected)) {
-        const resume = resumes.find(r => r.id === id)
-        if (!resume) continue
-        
-        const fileRes = await fetch(`${SUBAPSE_STORAGE_URL}${resume.filename}`)
-        if (!fileRes.ok) continue
-        const blob = await fileRes.blob()
-        zip.file(resume.original_name || `resume-${id}.pdf`, blob)
-      }
-
-      if (Object.keys(zip.files).length === 0) throw new Error('No files found')
-
-      const content = await zip.generateAsync({ type: 'blob' })
-      const url = URL.createObjectURL(content)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `resumes-bulk-${Date.now()}.zip`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      console.error('Download error:', err)
-      alert('Error downloading some files. Please try again.')
-    } finally {
-      setDownloadingBulk(false)
+    const jszip = (await import('jszip')).default
+    const zip = new jszip()
+    
+    const selectedResumes = resumes.filter(r => selected.has(r.id))
+    
+    for (const r of selectedResumes) {
+        try {
+          const res = await fetch(`/api/resumes/download?id=${r.id}`)
+          const blob = await res.blob()
+          zip.file(r.original_name, blob)
+        } catch (err) {
+          console.error(`Failed to download ${r.original_name}`, err)
+        }
     }
+    
+    const content = await zip.generateAsync({ type: 'blob' })
+    const url = URL.createObjectURL(content)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `resumes_bulk_${new Date().getTime()}.zip`
+    a.click()
+    setDownloadingBulk(false)
   }
 
-  const exportCSV = async () => {
-    const res = await fetch(`/api/resumes?limit=9999&status=${status}&folder=${folder}&sort=${sort}&order=${order}&skill=${skill}&minExp=${minExp}&maxExp=${maxExp}`)
-    const data = await res.json()
-    const rows: Resume[] = data.resumes || []
-    const headers = ['id','name','email','phone','folder','experience_years','status','rating','uploaded_at','skills']
-    const csv = [headers.join(','), ...rows.map(r => {
-      let skills: string[] = []
-      try { skills = typeof r.parsed_skills === 'string' ? JSON.parse(r.parsed_skills) : r.parsed_skills } catch {}
-      return [r.id, `"${r.parsed_name}"`, `"${r.parsed_email}"`, `"${r.parsed_phone}"`, `"${r.folder || 'Uncategorized'}"`,
-              r.experience_years, r.status, r.rating, r.uploaded_at, `"${skills.join('; ')}"`].join(',')
-    })].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = 'resumes.csv'; a.click()
-    URL.revokeObjectURL(url)
+  const exportCSV = () => {
+    const headers = ['Name', 'Email', 'Experience', 'Rating', 'Status', 'Skills', 'Uploaded']
+    const rows = resumes.map(r => [
+      r.parsed_name,
+      r.parsed_email,
+      r.experience_years,
+      r.rating,
+      r.status,
+      Array.isArray(r.parsed_skills) ? r.parsed_skills.join(', ') : r.parsed_skills,
+      new Date(r.uploaded_at).toLocaleDateString()
+    ])
+    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n")
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", "resumes_export.csv")
+    document.body.appendChild(link)
+    link.click()
   }
 
   return (
-    <div className="flex gap-6 max-w-[1600px] mx-auto min-h-[calc(100vh-10rem)]">
-      {/* Folder Sidebar */}
+    <div className="flex gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500 relative">
+      {/* Sidebar Folders */}
       <aside className="w-64 shrink-0 space-y-6">
          <div className="glass rounded-2xl p-5 border-white/5 space-y-4 shadow-xl">
             <h3 className="text-[10px] uppercase font-black text-slate-500 tracking-widest pl-1">Folders</h3>
@@ -233,7 +237,7 @@ function ResumesContent() {
             </nav>
             <div className="pt-2">
                <button 
-                onClick={createFolder}
+                onClick={() => setIsNewFolderModalOpen(true)}
                 className="w-full py-2 border border-dashed border-slate-800 text-slate-600 rounded-xl text-[10px] uppercase font-bold hover:border-slate-600 hover:text-slate-400 transition-colors"
                >
                   + Create New Folder
@@ -241,6 +245,29 @@ function ResumesContent() {
             </div>
          </div>
       </aside>
+
+      {/* New Folder Modal */}
+      {isNewFolderModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsNewFolderModalOpen(false)} />
+           <div className="relative glass w-full max-w-sm rounded-3xl p-8 border-brand-500/20 shadow-2xl animate-in zoom-in-95">
+              <h2 className="text-xl font-bold gradient-text mb-2">Create New Category</h2>
+              <p className="text-xs text-slate-400 mb-6 font-medium">Categorize your resumes systematically.</p>
+              <input 
+                autoFocus
+                className="input-dark mb-6 py-3 px-4 rounded-xl"
+                placeholder="e.g. Senior Developers"
+                value={newFolderName}
+                onChange={e => setNewFolderName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
+              />
+              <div className="flex gap-3">
+                 <button onClick={() => setIsNewFolderModalOpen(false)} className="btn flex-1 py-3 text-sm font-bold bg-white/5 text-slate-400 hover:text-white rounded-xl">Cancel</button>
+                 <button onClick={handleCreateFolder} className="btn flex-1 py-3 text-sm font-bold bg-brand-600 text-white hover:bg-brand-500 rounded-xl shadow-lg shadow-brand-500/10">Create Folder</button>
+              </div>
+           </div>
+        </div>
+      )}
 
       {/* Main Database Content */}
       <div className="flex-1 space-y-6 min-w-0">
