@@ -1,55 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { supabase } from '@/lib/db'
 
 export async function GET(req: NextRequest) {
   try {
-    const db = await getDb()
     const { searchParams } = new URL(req.url)
 
-    const page    = Math.max(1, parseInt(searchParams.get('page')   || '1'))
+    const page    = Math.max(1, parseInt(searchParams.get('page') || '1'))
     const limit   = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20')))
     const offset  = (page - 1) * limit
     const status  = searchParams.get('status') || 'all'
     const sort    = searchParams.get('sort')   || 'uploaded_at'
-    const order   = searchParams.get('order') === 'asc' ? 'ASC' : 'DESC'
+    const order   = searchParams.get('order') === 'asc'
     const skill   = searchParams.get('skill')  || ''
-    const minExp  = parseFloat(searchParams.get('minExp')   || '0')
-    const maxExp  = parseFloat(searchParams.get('maxExp')   || '99')
-    const minRating = parseInt(searchParams.get('minRating') || '0')
 
     const allowedSorts = ['uploaded_at','parsed_name','experience_years','rating','updated_at']
     const safeSort = allowedSorts.includes(sort) ? sort : 'uploaded_at'
 
-    const where: string[] = []
-    const params: Record<string, any> = { limit, offset }
+    let query = supabase.from('resumes').select('id, filename, original_name, file_size, mime_type, parsed_name, parsed_email, parsed_phone, parsed_skills, parsed_education, parsed_summary, experience_years, status, rating, tags, notes, uploaded_at, updated_at', { count: 'exact' })
 
-    if (status !== 'all')  { where.push('status = @status');              params.status    = status }
-    if (skill)             { where.push('parsed_skills LIKE @skill');      params.skill     = `%${skill}%` }
-    if (minExp > 0)        { where.push('experience_years >= @minExp');    params.minExp    = minExp }
-    if (maxExp < 99)       { where.push('experience_years <= @maxExp');    params.maxExp    = maxExp }
-    if (minRating > 0)     { where.push('rating >= @minRating');           params.minRating = minRating }
+    if (status !== 'all') query = query.eq('status', status)
+    if (skill) query = query.ilike('parsed_skills', `%${skill}%`)
 
-    const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
+    const { data: resumes, error, count } = await query
+      .order(safeSort, { ascending: order })
+      .range(offset, offset + limit - 1)
 
-    const resumes = db.prepare(`
-      SELECT id, filename, original_name, file_size, mime_type,
-             parsed_name, parsed_email, parsed_phone, parsed_skills,
-             parsed_education, parsed_summary, experience_years,
-             status, rating, tags, notes, uploaded_at, updated_at
-      FROM resumes ${whereClause}
-      ORDER BY ${safeSort} ${order}
-      LIMIT @limit OFFSET @offset
-    `).all(params)
-
-    const totalRow = db.prepare(
-      `SELECT COUNT(*) as total FROM resumes ${whereClause}`
-    ).get(params) as { total: number } | undefined
-
-    const total = totalRow?.total ?? 0
+    if (error) throw new Error(error.message)
 
     return NextResponse.json({
-      resumes,
-      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      resumes: resumes || [],
+      pagination: { page, limit, total: count || 0, pages: Math.ceil((count || 0) / limit) },
     })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
@@ -58,14 +38,13 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const db = await getDb()
     const { ids } = await req.json()
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: 'ids required' }, { status: 400 })
     }
-    const placeholders = ids.map(() => '?').join(',')
-    const result = db.prepare(`DELETE FROM resumes WHERE id IN (${placeholders})`).run(...ids)
-    return NextResponse.json({ deleted: result.changes })
+    const { error } = await supabase.from('resumes').delete().in('id', ids)
+    if (error) throw error
+    return NextResponse.json({ deleted: true })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

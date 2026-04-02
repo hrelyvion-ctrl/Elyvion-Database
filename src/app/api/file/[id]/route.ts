@@ -1,30 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
-import fs from 'fs'
+import { supabase } from '@/lib/db'
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const db = await getDb()
-    const resume = db.prepare(
-      'SELECT file_path, original_name, mime_type FROM resumes WHERE id = ?'
-    ).get(parseInt(params.id)) as { file_path: string; original_name: string; mime_type: string } | undefined
+    const id = parseInt(params.id)
+    if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
-    if (!resume) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (!fs.existsSync(resume.file_path)) {
-      return NextResponse.json({ error: 'File not on disk' }, { status: 404 })
-    }
+    const { data: record, error } = await supabase.from('resumes').select('file_path').eq('id', id).single()
+    if (error || !record) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    const buffer = fs.readFileSync(resume.file_path)
-    return new NextResponse(buffer, {
-      headers: {
-        'Content-Type': resume.mime_type || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${encodeURIComponent(resume.original_name)}"`,
-        'Content-Length': String(buffer.length),
-      },
-    })
+    const { data } = supabase.storage.from('resumes').getPublicUrl(record.file_path)
+
+    return NextResponse.redirect(data.publicUrl)
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

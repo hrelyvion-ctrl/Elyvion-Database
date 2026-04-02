@@ -1,68 +1,65 @@
-import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '@/lib/db'
 
 export async function GET() {
   try {
-    const db = await getDb()
+    const { data: resumes, error } = await supabase.from('resumes').select('status, parsed_skills, experience_years, uploaded_at, rating')
+    if (error) throw error
 
-    const totals = db.prepare(`
-      SELECT
-        COUNT(*) as total,
-        SUM(CASE WHEN status='new'         THEN 1 ELSE 0 END) as new_count,
-        SUM(CASE WHEN status='shortlisted' THEN 1 ELSE 0 END) as shortlisted,
-        SUM(CASE WHEN status='rejected'    THEN 1 ELSE 0 END) as rejected,
-        SUM(CASE WHEN status='hired'       THEN 1 ELSE 0 END) as hired,
-        SUM(CASE WHEN status='reviewed'    THEN 1 ELSE 0 END) as reviewed,
-        ROUND(AVG(CASE WHEN rating > 0 THEN rating END), 1) as avg_rating
-      FROM resumes
-    `).get() as any
+    const total = resumes.length
+    let new_count = 0, shortlisted = 0, hired = 0, rejected = 0, reviewed = 0;
+    let rankSum = 0, rankCount = 0;
+    const skillsMap: Record<string, number> = {}
+    const expMap: Record<string, number> = { '0-2 Yrs': 0, '3-5 Yrs': 0, '6-10 Yrs': 0, '10+ Yrs': 0 }
+    const trendMap: Record<string, number> = {}
 
-    // Skill frequency across all resumes
-    const allSkillRows = db.prepare(
-      `SELECT parsed_skills FROM resumes WHERE parsed_skills != '[]'`
-    ).all() as { parsed_skills: string }[]
+    for (const r of resumes) {
+      if (r.status === 'new') new_count++
+      if (r.status === 'shortlisted') shortlisted++
+      if (r.status === 'hired') hired++
+      if (r.status === 'rejected') rejected++
+      if (r.status === 'reviewed') reviewed++
 
-    const skillMap = new Map<string, number>()
-    for (const row of allSkillRows) {
+      if (r.rating > 0) {
+        rankSum += r.rating
+        rankCount++
+      }
+
+      const y = r.experience_years || 0
+      if (y < 3) expMap['0-2 Yrs']++
+      else if (y < 6) expMap['3-5 Yrs']++
+      else if (y <= 10) expMap['6-10 Yrs']++
+      else expMap['10+ Yrs']++
+
       try {
-        const skills: string[] = JSON.parse(row.parsed_skills)
-        for (const s of skills) skillMap.set(s, (skillMap.get(s) || 0) + 1)
+         const skills = JSON.parse(r.parsed_skills || '[]')
+         for (const s of skills) skillsMap[s] = (skillsMap[s] || 0) + 1
       } catch {}
+
+      if (r.uploaded_at) {
+         const d = r.uploaded_at.split('T')[0]
+         trendMap[d] = (trendMap[d] || 0) + 1
+      }
     }
-    const top_skills = Array.from(skillMap.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 12)
+
+    const top_skills = Object.entries(skillsMap)
+      .sort((a,b) => b[1] - a[1])
+      .slice(0, 10)
       .map(([skill, count]) => ({ skill, count }))
 
-    // Experience distribution buckets
-    const buckets = [
-      { range: '0-1 yrs', min: 0,  max: 1  },
-      { range: '1-3 yrs', min: 1,  max: 3  },
-      { range: '3-5 yrs', min: 3,  max: 5  },
-      { range: '5-8 yrs', min: 5,  max: 8  },
-      { range: '8+ yrs',  min: 8,  max: 999 },
-    ]
-    const by_experience = buckets.map(({ range, min, max }) => {
-      const row = db.prepare(
-        `SELECT COUNT(*) as count FROM resumes WHERE experience_years >= ? AND experience_years < ?`
-      ).get(min, max) as { count: number }
-      return { range, count: row?.count ?? 0 }
-    })
+    const by_experience = Object.entries(expMap)
+      .map(([range, count]) => ({ range, count }))
+      .filter(x => x.count > 0)
 
-    // Upload trend — last 14 days
-    const recent_uploads = db.prepare(`
-      SELECT date(uploaded_at) as date, COUNT(*) as count
-      FROM resumes
-      WHERE uploaded_at >= date('now', '-14 days')
-      GROUP BY date(uploaded_at)
-      ORDER BY date ASC
-    `).all() as { date: string; count: number }[]
+    const recent_uploads = Object.entries(trendMap)
+      .sort((a,b) => a[0].localeCompare(b[0]))
+      .slice(-14)
+      .map(([date, count]) => ({ date, count }))
 
     return NextResponse.json({
-      ...(totals ?? {}),
-      top_skills,
-      by_experience,
-      recent_uploads,
+      total, new_count, shortlisted, hired, rejected, reviewed,
+      avg_rating: rankCount ? parseFloat((rankSum/rankCount).toFixed(1)) : 0,
+      top_skills, by_experience, recent_uploads
     })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
