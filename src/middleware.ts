@@ -32,10 +32,17 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  const { data: { user } } = await supabase.auth.getUser()
   const { data: { session } } = await supabase.auth.getSession()
 
-  // 1. Unauthenticated users cannot access restricted pages
-  if (!session && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth')) {
+  // 🛡️ SECURITY HANDSHAKE BYPASS: Let them hit the home page if there's a code
+  const code = request.nextUrl.searchParams.get('code')
+  if (code && request.nextUrl.pathname === '/') {
+    return NextResponse.next()
+  }
+
+  // 🛡️ RECRUITER GATE: If not logged in and trying to see guarded pages
+  if (!user && (request.nextUrl.pathname !== '/login' && request.nextUrl.pathname !== '/api/auth/callback')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
