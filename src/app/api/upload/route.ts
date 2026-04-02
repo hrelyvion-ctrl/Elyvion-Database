@@ -47,7 +47,11 @@ async function extractWithAI(rawText: string) {
         "suggestedFolder": "AI | Software Engineer | Sales | Marketing | Design | Uncategorized"
       }
 
-      CRITICAL: Calculate 'experienceYears' by summing up the total professional tenure. If the resume says "5 years of experience", the value is 5.0. If it lists dates, calculate the sum of all durations.
+      CRITICAL EXTRACTION RULES:
+      1. EXPERIENCE YEARS: Calculate 'experienceYears' as a single decimal. Use the total years stated in the professional summary (e.g. "11+ years" = 11.0). 
+      2. IGNORE EDUCATION: Do NOT add years from education, 10th/12th grade, or university duration into 'experienceYears'. 
+      3. ACCURACY: If the resume lists dates like "2014 - Present", and today is 2024, the result is 10.0. 
+      4. If a candidate says "11+ years of success", use 11.0 exactly.
     `
 
     const result = await model.generateContent(prompt)
