@@ -29,7 +29,7 @@ export default function ResumeDetailPage() {
   const [editingNotes, setEditingNotes] = useState(false)
   const [notes, setNotes] = useState('')
   const [editingStatus, setEditingStatus] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview'|'raw'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview'|'raw'|'preview'>('overview')
 
   useEffect(() => {
     fetch(`/api/resumes/${id}`)
@@ -74,15 +74,15 @@ export default function ResumeDetailPage() {
   let experience: any[] = []
   let education: any[] = []
   let tags: string[] = []
-  try { skills = JSON.parse(resume.parsed_skills) } catch {}
-  try { experience = JSON.parse(resume.parsed_experience) } catch {}
-  try { education = JSON.parse(resume.parsed_education) } catch {}
-  try { tags = JSON.parse(resume.tags) } catch {}
+  try { skills = typeof resume.parsed_skills === 'string' ? JSON.parse(resume.parsed_skills) : resume.parsed_skills } catch {}
+  try { experience = typeof resume.parsed_experience === 'string' ? JSON.parse(resume.parsed_experience) : resume.parsed_experience } catch {}
+  try { education = typeof resume.parsed_education === 'string' ? JSON.parse(resume.parsed_education) : resume.parsed_education } catch {}
+  try { tags = typeof resume.tags === 'string' ? JSON.parse(resume.tags) : resume.tags } catch {}
 
   return (
-    <div className="space-y-5 max-w-5xl">
+    <div className="space-y-5 max-w-[1400px] mx-auto">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
+      <div className="flex items-center gap-2 text-sm text-slate-500 px-1">
         <Link href="/resumes" className="hover:text-slate-300 flex items-center gap-1">
           <ArrowLeft size={14} />Resumes
         </Link>
@@ -163,10 +163,10 @@ export default function ResumeDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 glass rounded-xl p-1 w-fit">
-        {(['overview','raw'] as const).map(tab => (
+        {(['overview', 'preview', 'raw'] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all capitalize ${activeTab === tab ? 'bg-brand-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
-            {tab === 'raw' ? 'Raw Text' : 'Overview'}
+            {tab === 'raw' ? 'Raw Text' : tab === 'preview' ? 'PDF Preview' : 'Overview'}
           </button>
         ))}
       </div>
@@ -264,6 +264,23 @@ export default function ResumeDetailPage() {
 
           {/* Right column */}
           <div className="space-y-5">
+            {/* PDF Preview Widget (Short) */}
+            <div className="glass rounded-2xl p-5 border-brand-500/20">
+               <h2 className="text-xs font-semibold text-brand-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+                  Quick View
+                  <button onClick={() => setActiveTab('preview')} className="text-brand-500 hover:text-brand-300 flex items-center gap-1">
+                    Full Preview
+                  </button>
+               </h2>
+               <div className="aspect-[3/4] rounded-lg overflow-hidden border border-white/5 bg-black/20">
+                  <iframe 
+                    src={`/api/file/${resume.id}#toolbar=0&navpanes=0`} 
+                    className="w-full h-full border-0"
+                    title="Resume Preview"
+                  />
+               </div>
+            </div>
+
             {/* Skills */}
             <div className="glass rounded-2xl p-5">
               <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Skills</h2>
@@ -317,6 +334,14 @@ export default function ResumeDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+      ) : activeTab === 'preview' ? (
+        <div className="glass rounded-2xl overflow-hidden h-[800px]">
+           <iframe 
+            src={`/api/file/${resume.id}#view=FitH`} 
+            className="w-full h-full border-0"
+            title="Full Resume Preview"
+          />
         </div>
       ) : (
         <div className="glass rounded-2xl p-5">

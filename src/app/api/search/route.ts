@@ -1,39 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/db'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+
+// Initialize Gemini for query embedding
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '')
+const embedder = genAI.getGenerativeModel({ model: 'text-embedding-004' })
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const q     = searchParams.get('q')?.trim() || ''
-    const page  = Math.max(1, parseInt(searchParams.get('page')  || '1'))
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20')))
-    const offset = (page - 1) * limit
 
     if (!q) {
-      return NextResponse.json({ resumes: [], pagination: { total: 0, pages: 0, page, limit } })
+      return NextResponse.json({ resumes: [], pagination: { total: 0, pages: 0, page: 1, limit: 10 } })
     }
 
-    // Try a simple text search in Supabase using ILIKE
-    const likeQ = `%${q}%`
-    
-    const { data: resumes, error, count } = await supabase.from('resumes')
-      .select('id, filename, original_name, parsed_name, parsed_email, parsed_phone, parsed_skills, parsed_education, parsed_summary, experience_years, status, rating, tags, uploaded_at', { count: 'exact' })
-      .or(`parsed_name.ilike.${likeQ},parsed_email.ilike.${likeQ},parsed_skills.ilike.${likeQ},raw_text.ilike.${likeQ}`)
-      .order('uploaded_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    // 1. Generate Query Embedding
+    let queryEmbedding;
+    try {
+      const result = await embedder.embedContent(q)
+      queryEmbedding = result.embedding.values
+    } catch (e) {
+      console.error('Embedding error, falling back to ILIKE search:', e)
+    }
 
-    if (error) throw new Error(error.message)
+    // 2. Perform Search
+    if (queryEmbedding) {
+      // Call Semantic Match function in Supabase
+      const { data: resumes, error } = await supabase.rpc('match_resumes', {
+        query_embedding: queryEmbedding,
+        match_threshold: 0.25, // Sensitivity - adjust as needed
+        match_count: 20
+      })
 
-    return NextResponse.json({
-      resumes,
-      pagination: { 
-        page, 
-        limit, 
-        total: count || 0, 
-        pages: Math.ceil((count || 0) / limit) 
-      },
-      query: q,
-    })
+      if (error) throw new Error(error.message)
+
+      return NextResponse.json({
+        resumes: (resumes || []).map((r: any) => ({
+           ...r,
+           match_score: Math.round(r.similarity * 100)
+        })),
+        is_semantic: true
+      })
+    } else {
+      // Fallback: ILIKE keyword matching
+      const likeQ = `%${q}%`
+      const { data: resumes, error } = await supabase.from('resumes')
+        .select('*')
+        .or(`parsed_name.ilike.${likeQ},parsed_email.ilike.${likeQ},parsed_skills.ilike.${likeQ},raw_text.ilike.${likeQ}`)
+        .order('uploaded_at', { ascending: false })
+        .limit(20)
+
+      if (error) throw new Error(error.message)
+
+      return NextResponse.json({
+        resumes: resumes || [],
+        is_semantic: false
+      })
+    }
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
