@@ -84,6 +84,7 @@ async function extractDocumentData(buffer: Buffer, ext: string) {
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
+    const folder = formData.get('folder') as string || 'Uncategorized'
     const files = formData.getAll('files') as File[]
     if (!files.length) return NextResponse.json({ error: 'No files provided' }, { status: 400 })
 
@@ -133,7 +134,8 @@ export async function POST(req: NextRequest) {
             experience_years: parsed.experienceYears || parsed.experience_years || 0,
             status: 'new',
             location: parsed.location || '',
-            current_salary: parsed.currentSalary || ''
+            current_salary: parsed.currentSalary || '',
+            folder: folder
         }).select().single()
 
         if (error) throw error

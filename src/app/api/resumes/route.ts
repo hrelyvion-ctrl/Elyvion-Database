@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
     const status  = searchParams.get('status') || 'all'
     const sort    = searchParams.get('sort')   || 'uploaded_at'
     const order   = searchParams.get('order') === 'asc'
+    const folder  = searchParams.get('folder') || ''
     
     // Advanced Filters (Naukri style)
     const skill   = searchParams.get('skill')  || ''
@@ -23,10 +24,11 @@ export async function GET(req: NextRequest) {
     const allowedSorts = ['uploaded_at','parsed_name','experience_years','rating','updated_at']
     const safeSort = allowedSorts.includes(sort) ? sort : 'uploaded_at'
 
-    let query = supabase.from('resumes').select('id, filename, original_name, file_size, mime_type, parsed_name, parsed_email, parsed_phone, parsed_skills, parsed_education, parsed_summary, experience_years, status, rating, tags, notes, uploaded_at, updated_at', { count: 'exact' })
+    let query = supabase.from('resumes').select('id, filename, original_name, file_size, mime_type, parsed_name, parsed_email, parsed_phone, parsed_skills, parsed_education, parsed_summary, experience_years, status, rating, tags, notes, folder, uploaded_at, updated_at', { count: 'exact' })
 
     // Apply Standard Filters
     if (status !== 'all') query = query.eq('status', status)
+    if (folder && folder !== 'All') query = query.eq('folder', folder)
     
     // Apply Experience Range (Naukri)
     if (minExp > 0) query = query.gte('experience_years', minExp)
