@@ -1,34 +1,61 @@
 'use client'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import {
-  LayoutDashboard, Users, Upload, Search, Tag, BarChart2,
-  ChevronRight, Database, Shield, LogOut
+import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { 
+  LayoutDashboard, 
+  FileText, 
+  Upload, 
+  Search, 
+  Activity, 
+  Tags, 
+  Settings,
+  ShieldAlert,
+  LogOut,
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react'
-import { clsx } from 'clsx'
 
-export function Sidebar() {
+// Main Navigation Config
+const NAV_ITEMS = [
+  { name: 'Dashboard', icon: LayoutDashboard, href: '/' },
+  { name: 'Resumes', icon: FileText, href: '/resumes' },
+  { name: 'Upload', icon: Upload, href: '/upload' },
+  { name: 'Search', icon: Search, href: '/search' },
+  { name: 'Analytics', icon: Activity, href: '/analytics' },
+  { name: 'Tags', icon: Tags, href: '/tags' },
+]
+
+export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)
-  
+  const [loading, setLoading] = useState(true)
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
   useEffect(() => {
-    const getProfile = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-        setProfile(data)
+    async function getProfile() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          // Fetch the profile for the logged in user
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          
+          if (data) setProfile(data)
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err)
+      } finally {
+        setLoading(false)
       }
     }
     getProfile()
@@ -37,96 +64,96 @@ export function Sidebar() {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
-  }
-
-  const navItems = [
-    { label: 'Dashboard',  href: '/',          icon: LayoutDashboard },
-    { label: 'Resumes',    href: '/resumes',    icon: Users },
-    { label: 'Upload',     href: '/upload',     icon: Upload },
-    { label: 'Search',     href: '/search',     icon: Search },
-    { label: 'Analytics',  href: '/analytics',  icon: BarChart2 },
-    { label: 'Tags',       href: '/tags',       icon: Tag },
-  ]
-
-  // Add Admin link if Master
-  if (profile?.role === 'Master') {
-    navItems.push({ label: 'Master Control', href: '/admin', icon: Shield })
+    router.refresh()
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 glass border-r border-white/5 flex flex-col z-50 overflow-hidden">
-      {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-brand-600/5 to-transparent pointer-events-none" />
+    <aside className="w-64 h-screen bg-[#020617] border-r border-white/5 flex flex-col sticky top-0 animate-in slide-in-from-left-8 duration-700">
       
-      {/* Logo */}
-      <div className="p-6 border-b border-white/5 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
-            <Database size={20} className="text-white" />
+      {/* Branding */}
+      <div className="p-8 pb-10">
+        <div className="flex items-center gap-3 group px-2">
+          <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20 group-hover:rotate-12 transition-all">
+             <ShieldCheck size={20} className="text-white" />
           </div>
-          <div>
-            <p className="font-bold text-sm tracking-tighter uppercase gradient-text">Elyvion RMS</p>
-            <p className="text-[10px] text-slate-500 tracking-[0.2em] font-black uppercase">Recruiter Portal</p>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-white tracking-widest uppercase">Elyvion RMS</span>
+            <span className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">Recruiter Portal</span>
           </div>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 p-4 space-y-1 relative z-10 overflow-y-auto">
-        {navItems.map(({ label, href, icon: Icon }) => {
-          const active = pathname === href || (href !== '/' && pathname.startsWith(href))
+      {/* Navigation */}
+      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        {NAV_ITEMS.map((item) => {
+          const isActive = pathname === item.href
           return (
             <Link
-              key={href}
-              href={href}
-              className={clsx(
-                'flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 group relative',
-                active
-                  ? 'bg-brand-600/15 text-brand-400 border border-brand-500/30'
-                  : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.03]'
-              )}
+              key={item.name}
+              href={item.href}
+              className={`flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all group ${
+                isActive 
+                ? 'bg-brand-500/10 text-white shadow-sm ring-1 ring-brand-500/20' 
+                : 'text-slate-500 hover:text-white hover:bg-white/[0.03]'
+              }`}
             >
-              <Icon size={18} className={active ? 'text-brand-400' : 'text-slate-600 group-hover:text-slate-300'} />
-              <span>{label}</span>
-              {active && <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-brand-500 shadow-[0_0_10px_#6366f1]" />}
+              <div className="flex items-center gap-3">
+                <item.icon size={18} className={isActive ? 'text-brand-400' : 'text-slate-600 group-hover:text-slate-400'} />
+                <span className="text-sm font-semibold tracking-wide">{item.name}</span>
+              </div>
+              {isActive && <div className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse shadow-sm shadow-brand-500" />}
             </Link>
           )
         })}
       </nav>
 
-      {/* User Session Footer */}
-      <div className="p-4 border-t border-white/5 bg-white/[0.01] relative z-20 space-y-4">
-        {profile ? (
-           <div className="flex items-center gap-3 px-3 py-1">
-              <div className="w-9 h-9 rounded-2xl bg-brand-600/10 border border-brand-500/20 flex items-center justify-center text-xs font-bold text-brand-400 shrink-0">
-                 {profile.full_name?.charAt(0) || 'U'}
-              </div>
-              <div className="min-w-0">
-                 <p className="text-xs font-bold text-slate-200 truncate">{profile.full_name || 'Incomplete'}</p>
-                 <div className="flex items-center gap-2">
-                    <span className="text-[9px] uppercase font-black tracking-widest text-brand-500">{profile.role}</span>
-                    <div className="w-1 h-1 rounded-full bg-slate-800" />
-                    <span className="text-[9px] text-slate-600 truncate">{profile.email}</span>
-                 </div>
-              </div>
-           </div>
-        ) : (
-           <div className="animate-pulse flex items-center gap-3 px-3 py-1">
-              <div className="w-9 h-9 bg-white/5 rounded-2xl" />
+      {/* Profile & Master Control */}
+      <div className="p-4 mt-auto space-y-2 border-t border-white/5 bg-white/[0.01]">
+        
+        {loading ? (
+           <div className="p-4 flex items-center gap-4 animate-pulse">
+              <div className="w-10 h-10 bg-white/5 rounded-full" />
               <div className="space-y-2 flex-1">
-                 <div className="h-2 bg-white/5 rounded w-2/3" />
+                 <div className="h-2 bg-white/5 rounded w-3/4" />
                  <div className="h-2 bg-white/5 rounded w-1/2" />
               </div>
            </div>
+        ) : (
+          <div className="space-y-4">
+             {/* Profile Card */}
+             <div className="flex items-center gap-4 px-4 py-4 rounded-3xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.05] transition-all cursor-pointer group">
+                <div className="w-10 h-10 bg-brand-600/20 rounded-full flex items-center justify-center border border-brand-500/20 ring-1 ring-brand-500/10 overflow-hidden">
+                   {profile?.full_name?.charAt(0) || <ShieldCheck size={16} className="text-brand-500" />}
+                </div>
+                <div className="flex flex-col min-w-0">
+                   <span className="text-xs font-bold text-white truncate uppercase tracking-widest">{profile?.full_name || 'Recruiter'}</span>
+                   <span className="text-[10px] text-brand-500 font-black uppercase tracking-widest">{profile?.role || 'Guest'}</span>
+                </div>
+             </div>
+
+             {/* Master Dashboard Icon - The "Gear" */}
+             {profile?.role === 'Master' && (
+                <Link 
+                  href="/admin"
+                  className="flex items-center gap-3 px-4 py-4 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500/20 transition-all group shadow-lg shadow-amber-500/5"
+                >
+                   <ShieldAlert size={18} className="group-hover:rotate-180 transition-transform duration-500" />
+                   <span className="text-[11px] font-black uppercase tracking-widest">Master Control Room</span>
+                   <ChevronRight size={14} className="ml-auto opacity-50" />
+                </Link>
+             )}
+
+             <button 
+               onClick={handleLogout}
+               className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all text-[11px] font-black uppercase tracking-[0.2em]"
+             >
+                <LogOut size={16} />
+                Sign Out Control
+             </button>
+          </div>
         )}
-        
-        <button 
-           onClick={handleLogout}
-           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 transition-all border border-transparent hover:border-rose-500/20"
-        >
-           <LogOut size={14} /> Sign Out Control
-        </button>
       </div>
+
     </aside>
   )
 }
