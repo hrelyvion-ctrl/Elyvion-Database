@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { supabase } from '@/lib/db'
 import { parseResume } from '@/lib/parser'
 import pdf from 'pdf-parse'
@@ -89,45 +91,56 @@ async function extractDocumentData(buffer: Buffer, ext: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const cookieStore = cookies()
+  const supabaseServer = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value },
+        set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }) },
+        remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options }) },
+      },
+    }
+  )
+  
+  const { data: { session } } = await supabaseServer.auth.getSession()
+
   try {
     const formData = await req.formData()
     const folder = formData.get('folder') as string || 'Uncategorized'
-    const files = formData.getAll('files') as File[]
-    if (!files.length) return NextResponse.json({ error: 'No files provided' }, { status: 400 })
+    const files = formData.getAll('file') as File[]
+    
+    if (!files.length) {
+      return NextResponse.json({ error: 'No files uploaded' }, { status: 400 })
+    }
 
     const results = []
-
     for (const file of files) {
       try {
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-
+        const buffer = Buffer.from(await file.arrayBuffer())
         const ext = path.extname(file.name).toLowerCase()
-        const mimeType = file.type || (ext === '.pdf' ? 'application/pdf' : 'application/octet-stream')
-        const uniqueName = Date.now() + '-' + Math.random().toString(36).slice(2) + ext
+        const mimeType = file.type || 'application/octet-stream'
+        const uniqueName = `${Date.now()}-${file.name}`
 
-        // Upload physical file to Supabase Storage Bucket
+        // 1. Upload to Storage
         const { error: storageError } = await supabase.storage
           .from('resumes')
-          .upload(uniqueName, buffer, {
-             contentType: mimeType,
-             upsert: true
-          });
+          .upload(uniqueName, buffer, { contentType: mimeType, upsert: true });
 
         if (storageError) throw storageError;
 
-        // Parse content with AI
+        // 2. AI Parse
         let parsed: any = { rawText: '', embedding: null, name: '', email: '', phone: '', location: '', currentSalary: '', skills: [], experience: [], education: [], summary: '', experienceYears: 0, suggestedFolder: 'Uncategorized' }
         if (['.pdf', '.docx', '.txt'].includes(ext)) {
             parsed = await extractDocumentData(buffer, ext)
         }
 
-        // AUTO-CATEGORIZATION: Use AI recommendation if user left it as Uncategorized
         const finalFolder = (folder === 'Uncategorized' && parsed.suggestedFolder) 
             ? parsed.suggestedFolder 
             : folder;
 
-        // Insert to Supabase Postgres Database
+        // 3. Database Insert
         const { data, error } = await supabase.from('resumes').insert({
             original_name: file.name,
             filename: uniqueName,
@@ -139,18 +152,27 @@ export async function POST(req: NextRequest) {
             parsed_name: parsed.name,
             parsed_email: parsed.email,
             parsed_phone: parsed.phone,
-            parsed_skills: JSON.stringify(parsed.skills),
-            parsed_experience: JSON.stringify(parsed.experience),
-            parsed_education: JSON.stringify(parsed.education),
-            parsed_summary: parsed.parsed_summary || parsed.summary || '',
-            experience_years: parsed.experienceYears || parsed.experience_years || 0,
-            status: 'new',
-            location: parsed.location || '',
-            current_salary: parsed.currentSalary || '',
-            folder: finalFolder
+            parsed_location: parsed.location,
+            parsed_salary: parsed.currentSalary,
+            parsed_skills: parsed.skills,
+            parsed_experience: parsed.experience,
+            parsed_education: parsed.education,
+            parsed_summary: parsed.summary,
+            experience_years: parsed.experienceYears,
+            folder: finalFolder,
         }).select().single()
 
         if (error) throw error
+
+        // 4. AUDIT LOGGING: Record the upload
+        if (session) {
+           await supabase.from('audit_logs').insert({
+              user_id: session.user.id,
+              user_name: session.user.user_metadata?.full_name || session.user.email,
+              action: 'upload',
+              details: { filename: file.name, folder: finalFolder, resume_id: data.id }
+           })
+        }
 
         results.push({ name: file.name, status: 'success', id: data.id })
       } catch (fErr: any) {
@@ -158,8 +180,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ results })
+    return NextResponse.json({ success: true, results })
   } catch (err: any) {
+    console.error('Upload error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

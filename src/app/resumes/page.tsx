@@ -2,9 +2,10 @@
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { createBrowserClient } from '@supabase/ssr'
 import {
   Search, Filter, SortAsc, SortDesc, Star, Trash2,
-  ChevronLeft, ChevronRight, Download, Eye, Users, Loader2, X
+  ChevronLeft, ChevronRight, Download, Eye, Users, Loader2, X, Shield
 } from 'lucide-react'
 import JSZip from 'jszip'
 
@@ -30,6 +31,10 @@ const STATUS_OPTIONS = ['all','new','reviewed','shortlisted','rejected','hired']
 function ResumesContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const supabase = createBrowserClient(
+     process.env.NEXT_PUBLIC_SUPABASE_URL!,
+     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   const [resumes, setResumes] = useState<Resume[]>([])
   const [folders, setFolders] = useState<string[]>(['Uncategorized','AI','Software Engineer','Sales','Marketing','Design'])
@@ -42,6 +47,18 @@ function ResumesContent() {
   const [movingToFolder, setMovingToFolder] = useState(false)
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
+  const [profile, setProfile] = useState<any>(null)
+
+  useEffect(() => {
+    const getProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+        setProfile(data)
+      }
+    }
+    getProfile()
+  }, [supabase])
 
   const [showFilters, setShowFilters] = useState(false)
   
@@ -145,6 +162,23 @@ function ResumesContent() {
     fetchFolders()
     fetchResumes() 
   }, [fetchResumes, fetchFolders])
+
+  if (profile && !profile.is_approved) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40 animate-in fade-in zoom-in-95">
+        <div className="w-20 h-20 bg-brand-600/10 rounded-3xl flex items-center justify-center mb-6 border border-brand-500/20">
+           <Shield size={40} className="text-brand-500 animate-pulse" />
+        </div>
+        <h2 className="text-2xl font-bold gradient-text">Awaiting Master Approval</h2>
+        <p className="text-slate-500 max-w-sm text-center mt-3 leading-relaxed">
+           Your account has been created, but access to the database requires manual approval from the **Master Account**. 
+        </p>
+        <p className="text-[10px] text-slate-700 uppercase font-black tracking-widest mt-8 px-4 py-2 border border-white/5 rounded-full">
+           Security ID: {profile.id.slice(0,8)}
+        </p>
+      </div>
+    )
+  }
 
   const toggleSelect = (id: number) => setSelected(prev => {
     const n = new Set(prev)

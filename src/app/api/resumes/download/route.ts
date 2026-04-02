@@ -1,7 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { supabase } from '@/lib/db'
 
 export async function GET(req: NextRequest) {
+  const cookieStore = cookies()
+  const supabaseServer = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value },
+        set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }) },
+        remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options }) },
+      },
+    }
+  )
+
+  const { data: { session } } = await supabaseServer.auth.getSession()
+
   try {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')
@@ -16,11 +33,22 @@ export async function GET(req: NextRequest) {
 
     if (dbError || !resume) throw new Error('Resume not found')
 
+    // 1. Fetch file from storage
     const { data: fileData, error: storageError } = await supabase.storage
       .from('resumes')
       .download(resume.filename)
 
     if (storageError) throw storageError
+
+    // 2. AUDIT LOGGING: Record the download
+    if (session) {
+       await supabase.from('audit_logs').insert({
+          user_id: session.user.id,
+          user_name: session.user.user_metadata?.full_name || session.user.email,
+          action: 'download',
+          details: { filename: resume.original_name, resume_id: id }
+       })
+    }
 
     return new Response(fileData, {
       headers: {
