@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Search, Filter, SortAsc, SortDesc, Star, Trash2,
-  ChevronLeft, ChevronRight, Download, Eye, Users, Loader2
+  ChevronLeft, ChevronRight, Download, Eye, Users, Loader2, X
 } from 'lucide-react'
 import JSZip from 'jszip'
 
@@ -105,6 +105,24 @@ function ResumesContent() {
          alert('Error: ' + (d.error || 'Failed to create folder. (Have you run the SQL?)'))
        }
     } catch (err) { alert('Error creating folder') }
+  }
+
+  const handleDeleteFolder = async (e: React.MouseEvent, folderName: string) => {
+    e.stopPropagation()
+    if (folderName === 'Uncategorized' || folderName === 'All') return
+    if (!confirm(`Delete folder "${folderName}"? Resumes in it will be moved to Uncategorized.`)) return
+    
+    try {
+       const res = await fetch('/api/folders', {
+          method: 'DELETE',
+          body: JSON.stringify({ name: folderName }),
+          headers: { 'Content-Type': 'application/json' }
+       })
+       if (res.ok) {
+         if (folder === folderName) setParam('folder', 'All')
+         fetchFolders()
+       }
+    } catch {}
   }
 
   const fetchResumes = useCallback(async () => {
@@ -223,16 +241,25 @@ function ResumesContent() {
             <h3 className="text-[10px] uppercase font-black text-slate-500 tracking-widest pl-1">Folders</h3>
             <nav className="space-y-1">
                {['All', ...folders].map(f => (
-                  <button 
-                  key={f}
-                  onClick={() => setParam('folder', f)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-all group ${folder === f ? 'bg-brand-600/10 text-brand-400 border border-brand-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent'}`}
-                  >
-                     <div className="flex items-center gap-3">
-                        <div className={`w-1.5 h-1.5 rounded-full ${folder === f ? 'bg-brand-400' : 'bg-slate-700'}`} />
-                        {f}
-                     </div>
-                  </button>
+                  <div key={f} className="relative group">
+                    <button 
+                      onClick={() => setParam('folder', f)}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-all ${folder === f ? 'bg-brand-600/10 text-brand-400 border border-brand-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent'}`}
+                    >
+                       <div className="flex items-center gap-3">
+                          <div className={`w-1.5 h-1.5 rounded-full ${folder === f ? 'bg-brand-400' : 'bg-slate-700'}`} />
+                          {f}
+                       </div>
+                    </button>
+                    {f !== 'All' && f !== 'Uncategorized' && (
+                       <button
+                         onClick={(e) => handleDeleteFolder(e, f)}
+                         className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-700 hover:text-white hover:bg-rose-500/20 invisible group-hover:visible transition-all duration-200"
+                       >
+                          <X size={14} />
+                       </button>
+                    )}
+                  </div>
                ))}
             </nav>
             <div className="pt-2">

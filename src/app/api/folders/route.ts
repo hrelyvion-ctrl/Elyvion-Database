@@ -39,3 +39,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { name } = await req.json()
+    if (!name || name === 'Uncategorized') {
+        return NextResponse.json({ error: 'Valid folder name required' }, { status: 400 })
+    }
+
+    // 1. Move all resumes in this folder to 'Uncategorized'
+    await supabase
+      .from('resumes')
+      .update({ folder: 'Uncategorized' })
+      .eq('folder', name)
+
+    // 2. Delete the folder record
+    const { error } = await supabase
+      .from('folders')
+      .delete()
+      .eq('name', name)
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
