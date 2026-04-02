@@ -2,7 +2,7 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { LogIn, ShieldCheck, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react'
+import { ShieldCheck, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
   const supabase = createBrowserClient(
@@ -18,30 +18,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
 
+  // Watch for session
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.push('/resumes')
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        router.push('/resumes')
+        router.refresh()
+      }
     })
   }, [supabase, router])
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true)
     
-    // Auto-detect the correct redirect URL (Local vs Vercel)
-    const protocol = window.location.protocol
-    const host = window.location.host
-    const redirectUrl = `${protocol}//${host}/api/auth/callback`
-
-    console.log('Redirecting to:', redirectUrl)
-
+    // Using simple redirectTo for maximum compatibility
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+        redirectTo: window.location.origin + '/api/auth/callback',
       },
     })
     
@@ -61,7 +55,7 @@ export default function LoginPage() {
           password,
           options: {
             data: { full_name: fullName },
-            emailRedirectTo: `${window.location.origin}/api/auth/callback`
+            emailRedirectTo: window.location.origin + '/api/auth/callback'
           }
         })
         if (error) throw error
@@ -71,6 +65,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
         router.push('/resumes')
+        router.refresh()
       }
     } catch (err: any) {
       alert('Authentication Alert: ' + err.message)
@@ -80,100 +75,99 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Dynamic Background */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-500/10 rounded-full blur-[160px] pointer-events-none opacity-50" />
-      <div className="absolute top-[-10%] right-[-10%] w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6 bg-grid-white/[0.02]">
+      {/* Background Glow */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-500/10 rounded-full blur-[160px] pointer-events-none opacity-50" />
       
-      <div className="w-full max-w-md relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-        <div className="bg-slate-900/40 backdrop-blur-3xl rounded-[48px] p-12 border border-white/5 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] space-y-10">
+      <div className="w-full max-w-sm relative z-10 animate-in zoom-in-95 duration-500">
+        <div className="bg-slate-900/40 backdrop-blur-2xl rounded-[40px] p-10 border border-white/5 shadow-2xl space-y-8 ring-1 ring-white/5">
           
-          <div className="text-center space-y-3">
-             <div className="w-20 h-20 bg-gradient-to-br from-brand-500 to-brand-700 rounded-3xl mx-auto flex items-center justify-center shadow-[0_0_40px_-8px_rgba(99,102,241,0.5)] mb-6 transition-all hover:scale-105 active:scale-95 group cursor-pointer">
-                <ShieldCheck size={36} className="text-white group-hover:rotate-12 transition-transform" />
+          <div className="text-center space-y-2">
+             <div className="w-16 h-16 bg-gradient-to-br from-brand-600 to-brand-700 rounded-3xl mx-auto flex items-center justify-center shadow-2xl shadow-brand-500/20 mb-4 transition-transform hover:scale-110">
+                <ShieldCheck size={32} className="text-white" />
              </div>
-             <h1 className="text-4xl font-bold tracking-tight text-white mb-2">Elyvion Access</h1>
-             <p className="text-slate-400 text-xs font-semibold uppercase tracking-[0.2em]">
-                {mode === 'signin' ? 'Enterprise Authentication Root' : 'Audit Protocol Registration'}
+             <h1 className="text-3xl font-extrabold tracking-tighter text-white uppercase">Elyvion Access</h1>
+             <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.2em] leading-tight">
+                {mode === 'signin' ? 'Verify Recruiter Identity' : 'Audit Protocol Registration'}
              </p>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-6 pt-2">
+            {/* Google OAuth (Primary) */}
             <button
                onClick={handleGoogleLogin}
                disabled={googleLoading || loading}
-               className="group relative w-full bg-white text-slate-950 hover:bg-slate-100 py-5 rounded-2xl font-bold flex items-center justify-center gap-4 transition-all active:scale-[0.98] shadow-xl disabled:opacity-50 overflow-hidden"
+               className="group relative w-full bg-white text-black hover:bg-slate-200 py-4.5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-xl disabled:opacity-50"
             >
                {googleLoading ? (
-                  <Loader2 className="animate-spin" size={20} />
+                  <Loader2 className="animate-spin text-brand-600" size={20} />
                ) : (
                   <>
-                     <img src="https://www.google.com/favicon.ico" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
-                     <span className="text-base">Login with Google</span>
+                     <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
+                     Login with Google SSO
                   </>
                )}
             </button>
 
-            <div className="flex items-center gap-6">
-               <div className="h-px bg-white/10 flex-1" />
-               <span className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.3em]">Secure Tier</span>
-               <div className="h-px bg-white/10 flex-1" />
+            <div className="flex items-center gap-4 py-1">
+               <div className="h-px bg-white/5 flex-1" />
+               <span className="text-[10px] text-slate-700 uppercase font-black tracking-widest">or</span>
+               <div className="h-px bg-white/5 flex-1" />
             </div>
 
+            {/* Email Form */}
             <form onSubmit={handleAuth} className="space-y-4">
               {mode === 'signup' && (
                 <div className="relative group">
-                  <User size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-brand-500 transition-colors" />
+                  <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-brand-500 transition-colors" />
                   <input 
                     type="text" required placeholder="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-black/20 border border-white/5 rounded-2xl py-5 pl-14 pr-5 text-sm outline-none focus:border-brand-500/50 focus:bg-black/40 transition-all text-white placeholder:text-slate-600 font-medium"
+                    className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4.5 pl-12 pr-4 text-sm outline-none focus:border-brand-500/50 focus:bg-white/[0.05] transition-all text-white placeholder:text-slate-700 font-medium"
                   />
                 </div>
               )}
               
               <div className="relative group">
-                 <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-brand-500 transition-colors" />
+                 <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-brand-500 transition-colors" />
                  <input 
-                   type="email" required placeholder="Organization Email" value={email} onChange={(e) => setEmail(e.target.value)}
-                   className="w-full bg-black/20 border border-white/5 rounded-2xl py-5 pl-14 pr-5 text-sm outline-none focus:border-brand-500/50 focus:bg-black/40 transition-all text-white placeholder:text-slate-600 font-medium"
+                   type="email" required placeholder="Work Email" value={email} onChange={(e) => setEmail(e.target.value)}
+                   className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4.5 pl-12 pr-4 text-sm outline-none focus:border-brand-500/50 focus:bg-white/[0.05] transition-all text-white placeholder:text-slate-700 font-medium"
                  />
               </div>
 
-              <div className="relative group">
-                 <Lock size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-brand-500 transition-colors" />
+              <div className="relative group pb-2">
+                 <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-brand-500 transition-colors" />
                  <input 
-                   type="password" required placeholder="Access Key" value={password} onChange={(e) => setPassword(e.target.value)}
-                   className="w-full bg-black/20 border border-white/5 rounded-2xl py-5 pl-14 pr-5 text-sm outline-none focus:border-brand-500/50 focus:bg-black/40 transition-all text-white placeholder:text-slate-600 font-medium"
+                   type="password" required placeholder="Security Key" value={password} onChange={(e) => setPassword(e.target.value)}
+                   className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4.5 pl-12 pr-4 text-sm outline-none focus:border-brand-500/50 focus:bg-white/[0.05] transition-all text-white placeholder:text-slate-700 font-medium"
                  />
               </div>
 
               <button
                  type="submit" disabled={loading || googleLoading}
-                 className="w-full bg-brand-600 hover:bg-brand-500 text-white py-5 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-[0_20px_40px_-12px_rgba(99,102,241,0.4)] disabled:opacity-50"
+                 className="w-full bg-brand-600 hover:bg-brand-500 text-white py-4.5 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-[0_20px_40px_-12px_rgba(99,102,241,0.4)] disabled:opacity-50"
               >
-                 {loading ? (
-                    <Loader2 className="animate-spin" size={20} />
-                 ) : (
+                 {loading ? <Loader2 className="animate-spin" size={20} /> : (
                     <>
-                       {mode === 'signin' ? 'Verify Identity' : 'Register Protocol'}
+                       {mode === 'signin' ? 'Verify Identity' : 'Register Auditor'}
                        <ArrowRight size={18} />
                     </>
                )}
               </button>
             </form>
 
-            <div className="pt-4">
+            <div className="pt-2 text-center">
                <button 
                  onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-                 className="w-full text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 hover:text-white transition-colors text-center"
+                 className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-600 hover:text-brand-400 transition-colors"
                >
-                  {mode === 'signin' ? "Request Auditor Credentials" : "Return to Authenticator"}
+                  {mode === 'signin' ? "Request Access Protocol" : "Return to Authenticator"}
                </button>
             </div>
           </div>
 
-          <p className="text-[10px] text-slate-600 text-center font-bold uppercase tracking-tight opacity-40">
-             Compliance Standard 11.20-B · Secure Transmission Enabled
+          <p className="text-[9px] text-slate-800 text-center font-black uppercase tracking-tight opacity-40">
+             Audit System 7-A · Enterprise Tier Protection
           </p>
 
         </div>
