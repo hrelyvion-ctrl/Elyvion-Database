@@ -78,7 +78,7 @@ export function Sidebar() {
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-black text-white tracking-tighter uppercase italic leading-none">Elyvion Hub</span>
-            <span className="text-[10px] text-amber-500 font-black uppercase tracking-[.3rem] mt-1">V4.0 GOLD ACTIVE</span>
+            <span className="text-[11px] text-amber-500 font-bold uppercase tracking-[.25rem] mt-1.5">V4.0 GOLD ACTIVE</span>
           </div>
         </div>
       </div>
@@ -101,7 +101,7 @@ export function Sidebar() {
                 <div className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-amber-500/20 shadow-lg shadow-amber-500/10 text-amber-400' : 'bg-white/5 text-slate-500 group-hover:text-amber-400'}`}>
                   <item.icon size={18} />
                 </div>
-                <span className={`text-[11px] tracking-[0.1em] font-bold uppercase ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
+                <span className={`text-[13px] tracking-wide font-bold uppercase ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
                   {item.name}
                 </span>
               </div>
@@ -131,8 +131,8 @@ export function Sidebar() {
                    )}
                 </div>
                 <div className="flex flex-col min-w-0">
-                   <span className="text-[10px] font-black text-white truncate uppercase tracking-widest">{profile?.full_name || 'MASTER'}</span>
-                   <span className="text-[8px] text-amber-500 font-extrabold uppercase tracking-widest opacity-80">{profile?.role || 'Auditor'}</span>
+                   <span className="text-[12px] font-black text-white truncate uppercase tracking-widest">{profile?.full_name || 'MASTER'}</span>
+                   <span className="text-[10px] text-amber-500 font-extrabold uppercase tracking-widest opacity-80">{profile?.role || 'Auditor'}</span>
                 </div>
              </div>
 
@@ -149,7 +149,7 @@ export function Sidebar() {
 
              <button 
                onClick={handleLogout}
-               className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl text-slate-600 hover:text-red-400 hover:bg-red-400/5 transition-all text-[9px] font-black uppercase tracking-[0.15em] border border-transparent hover:border-red-400/10"
+               className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl text-slate-500 hover:text-red-400 hover:bg-red-400/5 transition-all text-[11px] font-bold uppercase tracking-[0.1em] border border-transparent hover:border-red-400/10"
              >
                 <LogOut size={14} />
                 Disconnect Session

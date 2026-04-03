@@ -341,10 +341,10 @@ function ResumesContent() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
-               <h1 className="text-2xl font-bold gradient-text">Resume Database</h1>
+               <h1 className="text-standard-header text-white uppercase italic">Resume Database</h1>
                <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-bold uppercase tracking-widest">{folder}</span>
             </div>
-            <p className="text-slate-400 text-[11px] mt-1 font-medium">{total} total candidates matched in this folder</p>
+            <p className="text-slate-400 text-[10px] mt-1.5 uppercase font-black tracking-widest opacity-60">{total} total candidates matched in this folder</p>
           </div>
           <div className="flex gap-2">
             {selected.size > 0 && (

@@ -56,7 +56,7 @@ function DashboardLayout() {
     <div className="p-10 space-y-10 animate-in fade-in duration-700">
       
       <div className="flex flex-col gap-1">
-         <h1 className="text-2xl font-black text-white tracking-widest uppercase italic">Executive Command</h1>
+         <h1 className="text-standard-header text-white uppercase italic">Executive Command</h1>
          <div className="h-0.5 w-8 bg-brand-500 rounded-full" />
       </div>
 
@@ -108,12 +108,12 @@ function DashboardLayout() {
          
          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div className="space-y-4 text-left">
-               <h2 className="text-4xl font-black text-white tracking-tighter leading-tight uppercase">Intelligence Terminal v4.0</h2>
-               <p className="text-slate-400 text-base leading-relaxed font-medium max-w-md">Your global recruitment vault is now fully secured. Monitor uploads, audits, and recruiter efficiency in real-time from this node.</p>
-               <div className="flex items-center gap-4 pt-2 text-[10px] font-bold text-brand-500 uppercase tracking-[.3em]">
-                  <span className="animate-pulse">● System Operational</span>
+               <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Intelligence Terminal v4.0</h2>
+               <p className="text-slate-400 text-sm leading-relaxed font-medium max-w-sm">Global recruitment node fully secured. Monitor real-time audit protocols and workforce telemetry.</p>
+               <div className="flex items-center gap-3 pt-2 text-[9px] font-bold text-brand-500 uppercase tracking-[.25rem]">
+                  <span className="animate-pulse">● Active</span>
                   <span className="opacity-30">|</span>
-                  <span>R.O.O.T Access Confirmed</span>
+                  <span>ROOT Confirmed</span>
                </div>
             </div>
             <div className="hidden lg:flex items-center justify-center">
