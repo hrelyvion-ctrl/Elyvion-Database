@@ -112,34 +112,34 @@ export default function UploadPage() {
   const pendingCount = files.filter(f => f.status === 'pending').length
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-20">
+    <div className="max-w-xl mx-auto space-y-6 pb-20">
       <div>
-        <h1 className="text-3xl font-bold gradient-text">Upload Resumes</h1>
-        <p className="text-slate-400 text-sm mt-1">Drag &amp; drop PDF, DOCX, or TXT files — we&apos;ll parse them automatically</p>
+        <h1 className="text-2xl font-black text-white uppercase italic tracking-widest leading-none">Upload Resumes</h1>
+        <p className="text-slate-400 text-[11px] mt-1.5 font-medium uppercase tracking-widest opacity-60">Drag &amp; drop PDF, DOCX, or TXT — we&apos;ll parse them automatically</p>
       </div>
 
       {/* Compression Toggle */}
-      <div className="glass rounded-2xl p-4 flex items-center justify-between border-brand-500/10 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+      <div className="glass rounded-2xl p-3.5 flex items-center justify-between border-brand-500/10 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${compressEnabled ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-800 text-slate-500'}`}>
-               <CloudUpload size={20} />
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${compressEnabled ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-800 text-slate-500'}`}>
+               <CloudUpload size={18} />
             </div>
             <div>
-               <p className="text-[11px] font-black text-white uppercase tracking-widest">Resume Auto-Compression</p>
-               <p className="text-[10px] text-slate-500 font-medium">Bypass storage limits by zipping files before upload</p>
+               <p className="text-[10px] font-black text-white uppercase tracking-widest leading-tight">Resume Auto-Compression</p>
+               <p className="text-[9px] text-slate-500 font-medium">Bypass storage limits by zipping files</p>
             </div>
          </div>
          <button 
            onClick={() => setCompressEnabled(!compressEnabled)}
-           className={`w-12 h-6 rounded-full transition-all relative ${compressEnabled ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]' : 'bg-slate-700'}`}
+           className={`w-10 h-5 rounded-full transition-all relative ${compressEnabled ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]' : 'bg-slate-700'}`}
          >
-            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${compressEnabled ? 'left-7' : 'left-1'}`} />
+            <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${compressEnabled ? 'left-6' : 'left-1'}`} />
          </button>
       </div>
 
       {/* Drop zone */}
       <div
-        className={`drop-zone p-12 text-center cursor-pointer transition-all border-dashed ${dragging ? 'active scale-[0.99]' : 'hover:scale-[1.01]'}`}
+        className={`drop-zone p-10 text-center cursor-pointer transition-all border-dashed ${dragging ? 'active scale-[0.99] bg-brand-500/5' : 'hover:scale-[1.01] hover:bg-white/[0.01]'}`}
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
@@ -153,16 +153,16 @@ export default function UploadPage() {
           className="hidden"
           onChange={e => addFiles(e.target.files)}
         />
-        <div className={`w-16 h-16 mx-auto mb-5 rounded-3xl bg-brand-600/10 border border-brand-500/10 flex items-center justify-center transition-transform ${dragging ? 'scale-110' : ''}`}>
-          <Upload size={28} className="text-brand-500" />
+        <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl bg-brand-600/10 border border-brand-500/10 flex items-center justify-center transition-transform ${dragging ? 'scale-110' : ''}`}>
+          <Upload size={24} className="text-brand-500" />
         </div>
-        <p className="text-white font-bold text-xl tracking-tight">
+        <p className="text-white font-bold text-lg tracking-tight">
           {dragging ? 'Release to Start Extraction' : 'Drop resumes or click to browse'}
         </p>
-        <p className="text-slate-500 text-[11px] font-medium mt-1 uppercase tracking-widest leading-loose">Support PDF, DOCX, TXT · Multiple files simultaneously</p>
-        <div className="flex gap-2.5 justify-center mt-6">
+        <p className="text-slate-500 text-[10px] font-medium mt-1 uppercase tracking-widest leading-loose">Support PDF, DOCX, TXT</p>
+        <div className="flex gap-2.5 justify-center mt-5">
           {['PDF', 'DOCX', 'TXT'].map(t => (
-            <span key={t} className="text-[10px] font-black px-4 py-1.5 rounded-xl bg-white/[0.03] border border-white/5 text-slate-500 uppercase tracking-widest">{t}</span>
+            <span key={t} className="text-[9px] font-black px-3 py-1 rounded-lg bg-white/[0.03] border border-white/5 text-slate-600 uppercase tracking-widest">{t}</span>
           ))}
         </div>
       </div>
@@ -209,13 +209,13 @@ export default function UploadPage() {
                 </div>
                 <div className="shrink-0">
                   {item.status === 'pending' && (
-                    <button onClick={() => removeFile(idx)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-700 hover:text-slate-300 hover:bg-white/5 transition-all">
-                      <X size={16} />
+                    <button onClick={() => removeFile(idx)} className="w-6 h-6 rounded-md flex items-center justify-center text-slate-700 hover:text-slate-300 hover:bg-white/5 transition-all">
+                      <X size={14} />
                     </button>
                   )}
-                  {item.status === 'uploading' && <Loader2 size={16} className="text-brand-400 animate-spin" />}
-                  {item.status === 'done' && <CheckCircle size={16} className="text-emerald-400" />}
-                  {item.status === 'error' && <AlertCircle size={16} className="text-rose-400" />}
+                  {item.status === 'uploading' && <Loader2 size={14} className="text-brand-400 animate-spin" />}
+                  {item.status === 'done' && <CheckCircle size={14} className="text-emerald-400" />}
+                  {item.status === 'error' && <AlertCircle size={14} className="text-rose-400" />}
                 </div>
               </div>
             ))}

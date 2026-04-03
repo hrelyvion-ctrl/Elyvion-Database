@@ -54,11 +54,11 @@ export default function SearchPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-bold gradient-text">Smart Search</h1>
-          <p className="text-slate-400 text-sm mt-1">AI-powered semantic search across your entire database</p>
+          <h1 className="text-2xl font-black text-white uppercase italic tracking-widest leading-none">Smart Search</h1>
+          <p className="text-slate-400 text-[11px] mt-1.5 font-medium uppercase tracking-widest opacity-60">AI-powered semantic search across your entire database</p>
         </div>
         {isSemantic && searched && (
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[10px] font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[9px] font-bold uppercase tracking-wider">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />
             AI Semantic Search Active
           </div>
@@ -67,19 +67,19 @@ export default function SearchPage() {
 
       {/* Search box */}
       <div className="relative group">
-        <Search size={22} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-brand-400 transition-colors" />
+        <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-brand-400 transition-colors" />
         <input
           ref={inputRef}
           value={query}
           onChange={e => setQuery(e.target.value)}
-          className="input-dark pl-14 pr-12 py-5 text-lg rounded-2xl border-white/5 focus:border-brand-500/30 bg-white/[0.03] placeholder:text-slate-600 transition-all shadow-2xl"
+          className="input-dark pl-12 pr-12 py-4 text-base rounded-xl border-white/5 focus:border-brand-500/30 bg-white/[0.03] placeholder:text-slate-600 transition-all shadow-2xl"
           placeholder="e.g. 'Senior dev with React experience and leadership skills'"
           id="search-input"
         />
-        {loading && <Loader2 size={20} className="absolute right-5 top-1/2 -translate-y-1/2 animate-spin text-brand-400" />}
+        {loading && <Loader2 size={18} className="absolute right-5 top-1/2 -translate-y-1/2 animate-spin text-brand-400" />}
         {query && !loading && (
           <button onClick={() => setQuery('')} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200">
-            <X size={20} />
+            <X size={18} />
           </button>
         )}
       </div>

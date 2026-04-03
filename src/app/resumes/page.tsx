@@ -275,16 +275,16 @@ function ResumesContent() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             
             <div className="flex items-center justify-between px-1">
-               <h3 className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em]">Categories</h3>
+               <h3 className="text-[9px] uppercase font-black text-slate-500 tracking-[0.2em]">Categories</h3>
                <div className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
             </div>
 
-            <nav className="space-y-1.5">
+            <nav className="space-y-1">
                {['All', ...folders].map(f => (
                   <div key={f} className="relative group/folder">
                     <button 
                       onClick={() => setParam('folder', f)}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[13px] font-bold transition-all duration-300 ${folder === f ? 'bg-brand-500/10 text-brand-400 border border-brand-500/20 shadow-[0_0_20px_rgba(99,102,241,0.05)]' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent'}`}
+                      className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[12px] font-bold transition-all duration-300 ${folder === f ? 'bg-brand-500/10 text-brand-400 border border-brand-500/20 shadow-[0_0_20px_rgba(99,102,241,0.05)]' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent'}`}
                     >
                        <div className="flex items-center gap-3">
                           <div className={`w-1 h-1 rounded-full ${folder === f ? 'bg-brand-400 shadow-[0_0_8px_#818cf8]' : 'bg-slate-700'}`} />
@@ -296,7 +296,7 @@ function ResumesContent() {
                          onClick={(e) => handleDeleteFolder(e, f)}
                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-700 hover:text-white hover:bg-rose-500/20 invisible group-hover/folder:visible transition-all duration-200"
                        >
-                          <X size={12} />
+                          <X size={11} />
                        </button>
                     )}
                   </div>
@@ -341,10 +341,10 @@ function ResumesContent() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
-               <h1 className="text-3xl font-bold gradient-text">Resume Database</h1>
-               <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-bold uppercase tracking-widest">{folder}</span>
+               <h1 className="text-2xl font-bold gradient-text">Resume Database</h1>
+               <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-bold uppercase tracking-widest">{folder}</span>
             </div>
-            <p className="text-slate-400 text-sm mt-1">{total} total candidates matched in this folder</p>
+            <p className="text-slate-400 text-[11px] mt-1 font-medium">{total} total candidates matched in this folder</p>
           </div>
           <div className="flex gap-2">
             {selected.size > 0 && (
