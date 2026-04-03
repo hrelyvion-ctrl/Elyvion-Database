@@ -29,7 +29,7 @@ const NAV_ITEMS = [
   { name: 'Tags', icon: Tags, href: '/tags' },
 ]
 
-export default function Sidebar() {
+export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)

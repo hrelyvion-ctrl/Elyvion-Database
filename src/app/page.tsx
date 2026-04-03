@@ -6,10 +6,8 @@ import {
   ShieldCheck, 
   Loader2, 
   Users, 
-  FileUpload, 
   Database, 
   CheckCircle2,
-  TrendingDown,
   Activity
 } from 'lucide-react'
 
