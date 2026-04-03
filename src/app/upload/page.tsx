@@ -112,7 +112,7 @@ export default function UploadPage() {
   const pendingCount = files.filter(f => f.status === 'pending').length
 
   return (
-    <div className="max-w-xl mx-auto space-y-6 pb-20">
+    <div className="w-full space-y-8 pb-20">
       <div>
         <h1 className="text-2xl font-black text-white uppercase italic tracking-widest leading-none">Upload Resumes</h1>
         <p className="text-slate-400 text-[11px] mt-1.5 font-medium uppercase tracking-widest opacity-60">Drag &amp; drop PDF, DOCX, or TXT — we&apos;ll parse them automatically</p>

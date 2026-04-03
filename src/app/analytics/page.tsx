@@ -26,7 +26,7 @@ export default function AnalyticsPage() {
   }, [])
 
   if (loading) return (
-    <div className="space-y-5">
+    <div className="space-y-6 w-full animate-in fade-in duration-700">
       <div className="h-10 skeleton w-40 rounded-xl" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{Array(4).fill(0).map((_,i) => <div key={i} className="h-24 skeleton rounded-2xl" />)}</div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">{Array(4).fill(0).map((_,i) => <div key={i} className="h-64 skeleton rounded-2xl" />)}</div>
@@ -47,10 +47,10 @@ export default function AnalyticsPage() {
   const shortlistRate = data.total > 0 ? ((data.shortlisted / data.total) * 100).toFixed(1) : '0'
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-8">
       <div>
-        <h1 className="text-3xl font-bold gradient-text">Analytics</h1>
-        <p className="text-slate-400 text-sm mt-1">Deep insights into your recruitment pipeline</p>
+        <h1 className="text-standard-header text-white uppercase italic">Audit Analytics</h1>
+        <p className="text-slate-400 text-[11px] mt-1.5 font-medium uppercase tracking-widest opacity-60">Real-time intelligence on recruitment velocity and talent density</p>
       </div>
 
       {/* KPI cards */}

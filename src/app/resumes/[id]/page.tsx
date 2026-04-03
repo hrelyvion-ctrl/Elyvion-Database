@@ -80,21 +80,23 @@ export default function ResumeDetailPage() {
   try { tags = typeof resume.tags === 'string' ? JSON.parse(resume.tags) : resume.tags } catch {}
 
   return (
-    <div className="space-y-5 max-w-[1400px] mx-auto">
+    <div className="space-y-6 w-full animate-in fade-in duration-700">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500 px-1">
-        <Link href="/resumes" className="hover:text-slate-300 flex items-center gap-1">
-          <ArrowLeft size={14} />Resumes
+      <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1">
+        <Link href="/resumes" className="hover:text-amber-500 flex items-center gap-1 transition-colors">
+          <ArrowLeft size={12} />Archive
         </Link>
-        <span>/</span>
+        <span className="opacity-30">/</span>
         <span className="text-slate-300">{resume.parsed_name}</span>
       </div>
 
       {/* Hero card */}
-      <div className="glass rounded-2xl p-6">
-        <div className="flex items-start gap-5">
+      <div className="glass rounded-3xl p-8 border-brand-500/10 shadow-2xl relative overflow-hidden">
+         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2" />
+         
+        <div className="relative z-10 flex items-start gap-8">
           {/* Avatar */}
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white shrink-0 glow-sm">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-3xl font-black text-slate-950 shrink-0 shadow-2xl shadow-amber-500/20 border border-white/20">
             {(resume.parsed_name || 'U').charAt(0).toUpperCase()}
           </div>
 
@@ -102,7 +104,7 @@ export default function ResumeDetailPage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h1 className="text-2xl font-bold text-slate-100">{resume.parsed_name || 'Unknown Candidate'}</h1>
+                <h1 className="text-standard-header text-white uppercase italic leading-none">{resume.parsed_name || 'Unknown Candidate'}</h1>
                 <div className="flex flex-wrap gap-3 mt-1.5 text-sm text-slate-400">
                   {resume.parsed_email && (
                     <a href={`mailto:${resume.parsed_email}`} className="flex items-center gap-1.5 hover:text-brand-400 transition-colors">

@@ -51,10 +51,10 @@ export default function SearchPage() {
   }, [query])
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-8 pb-40">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-black text-white uppercase italic tracking-widest leading-none">Smart Search</h1>
+          <h1 className="text-standard-header text-white uppercase italic">Smart Search</h1>
           <p className="text-slate-400 text-[11px] mt-1.5 font-medium uppercase tracking-widest opacity-60">AI-powered semantic search across your entire database</p>
         </div>
         {isSemantic && searched && (

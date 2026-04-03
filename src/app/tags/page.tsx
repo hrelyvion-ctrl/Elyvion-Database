@@ -44,10 +44,10 @@ export default function TagsPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="w-full space-y-8 pb-20">
       <div>
-        <h1 className="text-3xl font-bold gradient-text">Tags</h1>
-        <p className="text-slate-400 text-sm mt-1">Organize candidates with color-coded labels</p>
+        <h1 className="text-standard-header text-white uppercase italic">Tags Inventory</h1>
+        <p className="text-slate-400 text-[11px] mt-1.5 font-medium uppercase tracking-widest opacity-60">Organize candidates with color-coded intelligence labels</p>
       </div>
 
       {/* Create tag */}
