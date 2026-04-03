@@ -16,6 +16,7 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false)
   const [selectedFolder, setSelectedFolder] = useState('Uncategorized')
   const [folders, setFolders] = useState<string[]>(['Uncategorized','AI','Software Engineer','Sales','Marketing','Design'])
+  const [compressEnabled, setCompressEnabled] = useState(true)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const fetchFolders = useCallback(async () => {
@@ -59,8 +60,28 @@ export default function UploadPage() {
     setFiles(prev => prev.map(f => f.status === 'pending' ? { ...f, status: 'uploading' } : f))
 
     const formData = new FormData()
-    pending.forEach(f => formData.append('files', f.file))
+    
+    // Auto-Compression Logic
+    const JSZip = (await import('jszip')).default
+    
+    for (const f of pending) {
+      if (compressEnabled && f.file.size > 50 * 1024) { // Only compress if over 50KB
+        try {
+          const zip = new JSZip()
+          zip.file(f.file.name, f.file)
+          const zippedBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 9 } })
+          const compressedFile = new File([zippedBlob], f.file.name + '.zip', { type: 'application/zip' })
+          formData.append('files', compressedFile)
+        } catch (e) {
+          formData.append('files', f.file)
+        }
+      } else {
+        formData.append('files', f.file)
+      }
+    }
+    
     formData.append('folder', selectedFolder)
+    formData.append('compressed', String(compressEnabled))
 
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData })
@@ -97,9 +118,28 @@ export default function UploadPage() {
         <p className="text-slate-400 text-sm mt-1">Drag &amp; drop PDF, DOCX, or TXT files — we&apos;ll parse them automatically</p>
       </div>
 
+      {/* Compression Toggle */}
+      <div className="glass rounded-2xl p-4 flex items-center justify-between border-brand-500/10 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+         <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${compressEnabled ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-800 text-slate-500'}`}>
+               <CloudUpload size={20} />
+            </div>
+            <div>
+               <p className="text-[11px] font-black text-white uppercase tracking-widest">Resume Auto-Compression</p>
+               <p className="text-[10px] text-slate-500 font-medium">Bypass storage limits by zipping files before upload</p>
+            </div>
+         </div>
+         <button 
+           onClick={() => setCompressEnabled(!compressEnabled)}
+           className={`w-12 h-6 rounded-full transition-all relative ${compressEnabled ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]' : 'bg-slate-700'}`}
+         >
+            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${compressEnabled ? 'left-7' : 'left-1'}`} />
+         </button>
+      </div>
+
       {/* Drop zone */}
       <div
-        className={`drop-zone p-14 text-center cursor-pointer transition-all ${dragging ? 'active' : ''}`}
+        className={`drop-zone p-12 text-center cursor-pointer transition-all border-dashed ${dragging ? 'active scale-[0.99]' : 'hover:scale-[1.01]'}`}
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
@@ -113,16 +153,16 @@ export default function UploadPage() {
           className="hidden"
           onChange={e => addFiles(e.target.files)}
         />
-        <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-brand-600/20 flex items-center justify-center transition-transform ${dragging ? 'scale-110' : ''}`}>
-          <CloudUpload size={32} className="text-brand-400" />
+        <div className={`w-16 h-16 mx-auto mb-5 rounded-3xl bg-brand-600/10 border border-brand-500/10 flex items-center justify-center transition-transform ${dragging ? 'scale-110' : ''}`}>
+          <Upload size={28} className="text-brand-500" />
         </div>
-        <p className="text-slate-300 font-semibold text-lg">
-          {dragging ? 'Drop them here!' : 'Drop resumes here or click to browse'}
+        <p className="text-white font-bold text-xl tracking-tight">
+          {dragging ? 'Release to Start Extraction' : 'Drop resumes or click to browse'}
         </p>
-        <p className="text-slate-500 text-sm mt-1">Supports PDF, DOCX, TXT · Multiple files at once</p>
-        <div className="flex gap-2 justify-center mt-4">
+        <p className="text-slate-500 text-[11px] font-medium mt-1 uppercase tracking-widest leading-loose">Support PDF, DOCX, TXT · Multiple files simultaneously</p>
+        <div className="flex gap-2.5 justify-center mt-6">
           {['PDF', 'DOCX', 'TXT'].map(t => (
-            <span key={t} className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-400">{t}</span>
+            <span key={t} className="text-[10px] font-black px-4 py-1.5 rounded-xl bg-white/[0.03] border border-white/5 text-slate-500 uppercase tracking-widest">{t}</span>
           ))}
         </div>
       </div>

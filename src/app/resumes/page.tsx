@@ -270,40 +270,45 @@ function ResumesContent() {
   return (
     <div className="flex gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500 relative">
       {/* Sidebar Folders */}
-      <aside className="w-64 shrink-0 space-y-6">
-         <div className="glass rounded-2xl p-5 border-white/5 space-y-4 shadow-xl">
-            <h3 className="text-[10px] uppercase font-black text-slate-500 tracking-widest pl-1">Folders</h3>
-            <nav className="space-y-1">
+      <aside className="w-64 shrink-0 px-2">
+         <div className="glass rounded-[32px] p-6 border-white/5 space-y-6 shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            
+            <div className="flex items-center justify-between px-1">
+               <h3 className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em]">Categories</h3>
+               <div className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
+            </div>
+
+            <nav className="space-y-1.5">
                {['All', ...folders].map(f => (
-                  <div key={f} className="relative group">
+                  <div key={f} className="relative group/folder">
                     <button 
                       onClick={() => setParam('folder', f)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-all ${folder === f ? 'bg-brand-600/10 text-brand-400 border border-brand-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent'}`}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[13px] font-bold transition-all duration-300 ${folder === f ? 'bg-brand-500/10 text-brand-400 border border-brand-500/20 shadow-[0_0_20px_rgba(99,102,241,0.05)]' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent'}`}
                     >
                        <div className="flex items-center gap-3">
-                          <div className={`w-1.5 h-1.5 rounded-full ${folder === f ? 'bg-brand-400' : 'bg-slate-700'}`} />
+                          <div className={`w-1 h-1 rounded-full ${folder === f ? 'bg-brand-400 shadow-[0_0_8px_#818cf8]' : 'bg-slate-700'}`} />
                           {f}
                        </div>
                     </button>
                     {f !== 'All' && f !== 'Uncategorized' && (
                        <button
                          onClick={(e) => handleDeleteFolder(e, f)}
-                         className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-700 hover:text-white hover:bg-rose-500/20 invisible group-hover:visible transition-all duration-200"
+                         className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-700 hover:text-white hover:bg-rose-500/20 invisible group-hover/folder:visible transition-all duration-200"
                        >
-                          <X size={14} />
+                          <X size={12} />
                        </button>
                     )}
                   </div>
                ))}
             </nav>
-            <div className="pt-2">
-               <button 
-                onClick={() => setIsNewFolderModalOpen(true)}
-                className="w-full py-2 border border-dashed border-slate-800 text-slate-600 rounded-xl text-[10px] uppercase font-bold hover:border-slate-600 hover:text-slate-400 transition-colors"
-               >
-                  + Create New Folder
-               </button>
-            </div>
+
+            <button 
+             onClick={() => setIsNewFolderModalOpen(true)}
+             className="w-full py-4 border border-dashed border-white/5 text-slate-600 rounded-2xl text-[10px] uppercase font-black tracking-widest hover:border-brand-500/30 hover:text-brand-400 transition-all hover:bg-brand-500/[0.02]"
+            >
+               + Create New Folder
+            </button>
          </div>
       </aside>
 
@@ -508,18 +513,18 @@ function ResumesContent() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-white/[0.02] border-b border-white/5 text-[10px] text-slate-500 uppercase font-black tracking-widest">
-                  <th className="px-5 py-4 text-left w-12 text-center">
+                <tr className="bg-white/[0.01] border-b border-white/5 text-[10px] text-slate-500 uppercase font-black tracking-widest">
+                  <th className="px-6 py-6 text-left w-12 text-center">
                     <input type="checkbox" checked={selected.size === resumes.length && resumes.length > 0}
-                      onChange={toggleAll} className="accent-brand-500 w-4 h-4 cursor-pointer" />
+                      onChange={toggleAll} className="accent-brand-500 w-4 h-4 cursor-pointer rounded-lg" />
                   </th>
-                  <th className="px-5 py-4 text-left">Candidate Info</th>
-                  <th className="px-5 py-4 text-left">Top Skills</th>
-                  <th className="px-5 py-4 text-left">Exp</th>
-                  <th className="px-5 py-4 text-left">Rating</th>
-                  <th className="px-5 py-4 text-left">Status</th>
-                  <th className="px-5 py-4 text-left">Uploaded</th>
-                  <th className="px-5 py-4 text-right pr-6">Action</th>
+                  <th className="px-6 py-6 text-left">Candidate Intelligence</th>
+                  <th className="px-6 py-6 text-left">Primary Stack</th>
+                  <th className="px-6 py-6 text-left">Exp</th>
+                  <th className="px-6 py-6 text-left">Audit Rating</th>
+                  <th className="px-6 py-6 text-left">Security Status</th>
+                  <th className="px-6 py-6 text-left">Registered</th>
+                  <th className="px-6 py-6 text-right pr-8">Actions</th>
                 </tr>
               </thead>
               <tbody>

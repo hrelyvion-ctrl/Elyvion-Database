@@ -55,40 +55,49 @@ function DashboardLayout() {
   return (
     <div className="p-10 space-y-10 animate-in fade-in duration-700">
       
-      <div className="flex flex-col gap-2">
-         <h1 className="text-4xl font-extrabold text-white tracking-tighter uppercase tracking-widest italic">Command Intelligence</h1>
-         <div className="h-1 w-24 bg-brand-600 rounded-full" />
+      <div className="flex flex-col gap-1">
+         <h1 className="text-3xl font-black text-white tracking-widest uppercase italic">Executive Command</h1>
+         <div className="h-0.5 w-12 bg-brand-500 rounded-full" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          {/* KPI Cards */}
-         <div className="bg-white/[0.03] border border-white/5 rounded-[40px] p-8 space-y-4 hover:bg-white/[0.05] transition-all group">
-            <div className="w-14 h-14 bg-brand-500/10 rounded-2xl flex items-center justify-center text-brand-500 group-hover:scale-110 transition-transform shadow-2xl shadow-brand-500/10">
-               <Database size={28} />
+         <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-8 space-y-6 hover:bg-white/[0.04] transition-all group relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+               <Database size={80} />
+            </div>
+            <div className="w-12 h-12 bg-brand-500/10 rounded-2xl flex items-center justify-center text-brand-500 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(99,102,241,0.1)] border border-brand-500/20">
+               <Database size={24} />
             </div>
             <div>
-               <p className="text-xs font-black text-slate-500 uppercase tracking-widest leading-loose">Database Repository</p>
-               <h3 className="text-4xl font-black text-white">{totalResumes} Resumes</h3>
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Database Repository</p>
+               <h3 className="text-3xl font-black text-white">{totalResumes} Resumes</h3>
             </div>
          </div>
 
-         <div className="bg-white/[0.03] border border-white/5 rounded-[40px] p-8 space-y-4 hover:bg-white/[0.05] transition-all group">
-            <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform shadow-2xl shadow-amber-500/10">
-               <CheckCircle2 size={28} />
+         <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-8 space-y-6 hover:bg-white/[0.04] transition-all group relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+               <CheckCircle2 size={80} />
+            </div>
+            <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(245,158,11,0.1)] border border-amber-500/20">
+               <CheckCircle2 size={24} />
             </div>
             <div>
-               <p className="text-xs font-black text-slate-500 uppercase tracking-widest leading-loose">Vetted Auditors</p>
-               <h3 className="text-4xl font-black text-white">12 Teams</h3>
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Vetted Auditors</p>
+               <h3 className="text-3xl font-black text-white">12 Teams</h3>
             </div>
          </div>
 
-         <div className="bg-white/[0.03] border border-white/5 rounded-[40px] p-8 space-y-4 hover:bg-white/[0.05] transition-all group">
-            <div className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform shadow-2xl shadow-red-500/10">
-               <Activity size={28} />
+         <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-8 space-y-6 hover:bg-white/[0.04] transition-all group relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+               <Activity size={80} />
+            </div>
+            <div className="w-12 h-12 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(239,68,68,0.1)] border border-red-500/20">
+               <Activity size={24} />
             </div>
             <div>
-               <p className="text-xs font-black text-slate-500 uppercase tracking-widest leading-loose">Audit Alerts</p>
-               <h3 className="text-4xl font-black text-white">0 Flags</h3>
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Audit Alerts</p>
+               <h3 className="text-3xl font-black text-white">0 Flags</h3>
             </div>
          </div>
       </div>

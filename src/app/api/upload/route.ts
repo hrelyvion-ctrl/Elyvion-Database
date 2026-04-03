@@ -7,6 +7,7 @@ import pdf from 'pdf-parse'
 import mammoth from 'mammoth'
 import path from 'path'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import JSZip from 'jszip'
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '')
@@ -132,8 +133,27 @@ export async function POST(req: NextRequest) {
 
         // 2. AI Parse
         let parsed: any = { rawText: '', embedding: null, name: '', email: '', phone: '', location: '', currentSalary: '', skills: [], experience: [], education: [], summary: '', experienceYears: 0, suggestedFolder: 'Uncategorized' }
-        if (['.pdf', '.docx', '.txt'].includes(ext)) {
-            parsed = await extractDocumentData(buffer, ext)
+        
+        let parseBuffer = buffer;
+        let parseExt = ext;
+        
+        // Handle Auto-Compressed (Zipped) files
+        if (ext === '.zip') {
+            try {
+                const zip = new JSZip();
+                const contents = await zip.loadAsync(buffer);
+                const firstFile = Object.values(contents.files)[0];
+                if (firstFile && !firstFile.dir) {
+                    parseBuffer = Buffer.from(await firstFile.async('arraybuffer'));
+                    parseExt = path.extname(firstFile.name).toLowerCase();
+                }
+            } catch (e) {
+                console.error('Unzip error:', e);
+            }
+        }
+
+        if (['.pdf', '.docx', '.txt'].includes(parseExt)) {
+            parsed = await extractDocumentData(parseBuffer, parseExt)
         }
 
         const finalFolder = (folder === 'Uncategorized' && parsed.suggestedFolder) 

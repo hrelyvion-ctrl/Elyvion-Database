@@ -84,47 +84,55 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-6 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center justify-between px-5 py-4 rounded-3xl transition-all group ${
+              className={`flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
                 isActive 
-                ? 'bg-amber-500/10 text-white shadow-xl ring-1 ring-amber-500/20' 
-                : 'text-slate-500 hover:text-white hover:bg-white/[0.03]'
+                ? 'bg-amber-500/10 text-white shadow-[0_0_20px_rgba(245,158,11,0.05)] ring-1 ring-amber-500/20' 
+                : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              <div className="flex items-center gap-4">
-                <item.icon size={20} className={isActive ? 'text-amber-400' : 'text-slate-700 group-hover:text-amber-400'} />
-                <span className={`text-sm tracking-wide font-black uppercase ${isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>{item.name}</span>
+              <div className="flex items-center gap-3.5">
+                <div className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-amber-500/20 shadow-lg shadow-amber-500/10 text-amber-400' : 'bg-white/5 text-slate-500 group-hover:text-amber-400'}`}>
+                  <item.icon size={18} />
+                </div>
+                <span className={`text-[11px] tracking-[0.1em] font-bold uppercase ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
+                  {item.name}
+                </span>
               </div>
-              {isActive && <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-2xl shadow-amber-500" />}
+              {isActive && <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shadow-[0_0_10px_#f59e0b]" />}
             </Link>
           )
         })}
       </nav>
 
       {/* Profile & Master Control */}
-      <div className="p-6 mt-auto space-y-4 border-t border-white/5 bg-white/[0.01]">
+      <div className="p-4 mt-auto space-y-3 border-t border-white/5 bg-white/[0.01]">
         
         {loading ? (
-           <div className="p-4 animate-pulse flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/5 rounded-full" />
-              <div className="h-4 bg-white/5 rounded w-24" />
+           <div className="p-3 animate-pulse flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/5 rounded-full" />
+              <div className="h-4 bg-white/5 rounded w-20" />
            </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
              {/* Profile Card */}
-             <div className="flex items-center gap-4 px-5 py-5 rounded-[40px] bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-all">
-                <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/20 shadow-xl overflow-hidden">
-                   <span className="text-sm font-black text-amber-500 uppercase">{profile?.full_name?.charAt(0) || 'E'}</span>
+             <div className="flex items-center gap-3 px-4 py-4 rounded-3xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-all">
+                <div className="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/20 shadow-inner overflow-hidden shrink-0">
+                   {profile?.avatar_url ? (
+                     <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                   ) : (
+                     <span className="text-xs font-black text-amber-500 uppercase">{profile?.full_name?.charAt(0) || 'E'}</span>
+                   )}
                 </div>
                 <div className="flex flex-col min-w-0">
                    <span className="text-[10px] font-black text-white truncate uppercase tracking-widest">{profile?.full_name || 'MASTER'}</span>
-                   <span className="text-[9px] text-amber-500 font-extrabold uppercase tracking-widest">{profile?.role || 'Auditor'}</span>
+                   <span className="text-[8px] text-amber-500 font-extrabold uppercase tracking-widest opacity-80">{profile?.role || 'Auditor'}</span>
                 </div>
              </div>
 
@@ -132,19 +140,19 @@ export function Sidebar() {
              {profile?.role === 'Master' && (
                 <Link 
                   href="/admin"
-                  className="flex items-center gap-4 px-5 py-5 rounded-[40px] bg-amber-600 text-slate-950 font-black uppercase tracking-[.25em] text-[10px] hover:bg-amber-400 transition-all shadow-2xl shadow-amber-500/20 border-t border-white/20 active:scale-[0.98]"
+                  className="flex items-center justify-center gap-3 w-full py-4 rounded-3xl bg-amber-600 text-slate-950 font-black uppercase tracking-[0.2em] text-[10px] hover:bg-amber-400 transition-all shadow-[0_10px_30px_rgba(217,119,6,0.15)] border-t border-white/20 active:scale-[0.98] group"
                 >
-                   <History size={20} />
+                   <History size={16} className="group-hover:rotate-12 transition-transform" />
                    <span>Master Command</span>
                 </Link>
              )}
 
              <button 
                onClick={handleLogout}
-               className="w-full flex items-center gap-4 px-5 py-4 rounded-3xl text-slate-700 hover:text-red-500 hover:bg-red-500/5 transition-all text-[10px] font-black uppercase tracking-widest"
+               className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl text-slate-600 hover:text-red-400 hover:bg-red-400/5 transition-all text-[9px] font-black uppercase tracking-[0.15em] border border-transparent hover:border-red-400/10"
              >
-                <LogOut size={18} />
-                Terminating NODE
+                <LogOut size={14} />
+                Disconnect Session
              </button>
           </div>
         )}
