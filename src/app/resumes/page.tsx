@@ -514,17 +514,17 @@ function ResumesContent() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-white/[0.01] border-b border-white/5 text-[10px] text-slate-500 uppercase font-black tracking-widest">
-                  <th className="px-6 py-6 text-left w-12 text-center">
+                  <th className="px-4 py-6 text-left w-12 text-center">
                     <input type="checkbox" checked={selected.size === resumes.length && resumes.length > 0}
                       onChange={toggleAll} className="accent-brand-500 w-4 h-4 cursor-pointer rounded-lg" />
                   </th>
-                  <th className="px-6 py-6 text-left">Candidate Intelligence</th>
-                  <th className="px-6 py-6 text-left">Primary Stack</th>
-                  <th className="px-6 py-6 text-left">Exp</th>
-                  <th className="px-6 py-6 text-left">Audit Rating</th>
-                  <th className="px-6 py-6 text-left">Security Status</th>
-                  <th className="px-6 py-6 text-left">Registered</th>
-                  <th className="px-6 py-6 text-right pr-8">Actions</th>
+                  <th className="px-4 py-6 text-left w-[240px]">Candidate</th>
+                  <th className="px-4 py-6 text-left">Primary Stack</th>
+                  <th className="px-4 py-6 text-left w-[80px]">Exp</th>
+                  <th className="px-4 py-6 text-left w-[120px]">Rating</th>
+                  <th className="px-4 py-6 text-left w-[120px]">Status</th>
+                  <th className="px-4 py-6 text-left w-[120px]">Registered</th>
+                  <th className="px-4 py-6 text-right pr-6 w-[60px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -550,51 +550,50 @@ function ResumesContent() {
                   return (
                     <tr key={r.id}
                       className={`border-b border-white/5 hover:bg-white/[0.03] transition-all group ${selected.has(r.id) ? 'bg-brand-900/10' : ''}`}>
-                      <td className="px-5 py-5 text-center">
+                      <td className="px-4 py-5 text-center">
                         <input type="checkbox" checked={selected.has(r.id)}
                           onChange={() => toggleSelect(r.id)} className="accent-brand-500 w-4 h-4 cursor-pointer" />
                       </td>
-                      <td className="px-5 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-600 to-indigo-700 flex items-center justify-center text-sm font-bold text-white shadow-lg group-hover:scale-105 transition-transform shrink-0">
+                      <td className="px-4 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-600 to-indigo-700 flex items-center justify-center text-[10px] font-bold text-white shadow-lg shrink-0">
                             {(r.parsed_name || 'U').charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-bold text-slate-200 group-hover:text-brand-400 transition-colors truncate max-w-[200px]">{r.parsed_name || 'Unknown'}</p>
-                            <p className="text-xs text-slate-500 truncate max-w-[180px] font-medium">{r.parsed_email}</p>
+                            <p className="font-bold text-slate-200 group-hover:text-brand-400 transition-colors truncate text-xs">{r.parsed_name || 'Unknown'}</p>
+                            <p className="text-[10px] text-slate-500 truncate font-medium">{r.parsed_email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-5">
-                        <div className="flex gap-1.5 flex-wrap max-w-[240px]">
-                          {(skills || []).slice(0, 3).map(s => (
-                            <span key={s} className="text-[10px] px-2 py-0.5 rounded-md bg-brand-900/40 text-brand-300 border border-brand-800/20 font-semibold">{s}</span>
+                      <td className="px-4 py-5">
+                        <div className="flex gap-1.5 flex-wrap">
+                          {(skills || []).slice(0, 2).map(s => (
+                            <span key={s} className="text-[9px] px-2 py-0.5 rounded-md bg-brand-900/40 text-brand-300 border border-brand-800/20 font-semibold">{s}</span>
                           ))}
-                          {(skills || []).length > 3 && <span className="text-[10px] text-slate-600 font-bold">+{skills.length - 3} more</span>}
+                          {(skills || []).length > 2 && <span className="text-[9px] text-slate-600 font-bold">+{skills.length - 2}</span>}
                         </div>
                       </td>
-                      <td className="px-5 py-5 whitespace-nowrap">
-                        <span className="text-sm font-bold text-slate-300">{r.experience_years}y</span>
-                        <p className="text-[10px] text-slate-600 uppercase font-bold">Exp</p>
+                      <td className="px-4 py-5 whitespace-nowrap">
+                        <span className="text-xs font-bold text-slate-300">{r.experience_years}y</span>
                       </td>
-                      <td className="px-5 py-5">
+                      <td className="px-4 py-5">
                         <div className="flex gap-0.5">
                           {Array(5).fill(0).map((_, i) => (
-                            <Star key={i} size={11} className={i < r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-800'} />
+                            <Star key={i} size={10} className={i < r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-800'} />
                           ))}
                         </div>
                       </td>
-                      <td className="px-5 py-5">
-                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider badge-${r.status}`}>
+                      <td className="px-4 py-5">
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider badge-${r.status}`}>
                             {r.status}
                         </span>
                       </td>
-                      <td className="px-5 py-5 text-xs text-slate-500 font-medium whitespace-nowrap">
+                      <td className="px-4 py-5 text-[10px] text-slate-500 font-medium whitespace-nowrap">
                         {new Date(r.uploaded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
-                      <td className="px-5 py-5 text-right pr-6">
-                        <Link href={`/resumes/${r.id}`} className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-white/5 text-slate-400 hover:bg-brand-500/20 hover:text-brand-400 transition-all">
-                            <Eye size={16} />
+                      <td className="px-4 py-5 text-right pr-6">
+                        <Link href={`/resumes/${r.id}`} className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/5 text-slate-400 hover:bg-brand-500/20 hover:text-brand-400 transition-all">
+                            <Eye size={14} />
                         </Link>
                       </td>
                     </tr>

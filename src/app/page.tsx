@@ -2,13 +2,17 @@
 import { useEffect, useState, Suspense } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { 
   ShieldCheck, 
   Loader2, 
   Users, 
   Database, 
   CheckCircle2,
-  Activity
+  Activity,
+  Search,
+  Map,
+  Terminal
 } from 'lucide-react'
 
 function DashboardLayout() {
@@ -19,6 +23,8 @@ function DashboardLayout() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [totalResumes, setTotalResumes] = useState(0)
+  const [recentResumes, setRecentResumes] = useState<any[]>([])
+  const [topSkills, setTopSkills] = useState<string[]>([])
 
   useEffect(() => {
     async function loadStats() {
@@ -33,7 +39,20 @@ function DashboardLayout() {
         .from('resumes')
         .select('*', { count: 'exact', head: true })
       
-      setTotalResumes(count || 5)
+      setTotalResumes(count || 0)
+
+      // Fetch Recent
+      const { data: recent } = await supabase
+        .from('resumes')
+        .select('id, parsed_name, status, uploaded_at, parsed_skills')
+        .order('uploaded_at', { ascending: false })
+        .limit(5)
+      
+      setRecentResumes(recent || [])
+
+      // Mock top skills for UI value
+      setTopSkills(['React.js', 'Python', 'AWS', 'Next.js', 'TypeScript', 'Node.js', 'SQL'])
+      
       setLoading(false)
     }
     loadStats()
@@ -60,6 +79,25 @@ function DashboardLayout() {
          <div className="h-0.5 w-8 bg-brand-500 rounded-full" />
       </div>
 
+      {/* Quick Actions Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { title: 'Audit Search', icon: Search, desc: 'Query database' },
+          { title: 'Map Talent', icon: Map, desc: 'Visualize density' },
+          { title: 'System Health', icon: Terminal, desc: 'Node status' }
+        ].map((action) => (
+          <button key={action.title} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] transition-all text-left group">
+            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-brand-500 group-hover:scale-110 transition-transform">
+              <action.icon size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-black text-white uppercase">{action.title}</p>
+              <p className="text-[9px] text-slate-500 uppercase tracking-widest">{action.desc}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          {/* KPI Cards */}
          <div className="bg-white/[0.02] border border-white/5 rounded-[24px] p-6 space-y-4 hover:bg-white/[0.04] transition-all group relative overflow-hidden">
@@ -79,7 +117,7 @@ function DashboardLayout() {
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                <CheckCircle2 size={60} />
             </div>
-            <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(245,158,11,0.1)] border border-amber-500/20">
+            <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(245,158,11,0.1)] border border-brand-500/20">
                <CheckCircle2 size={20} />
             </div>
             <div>
@@ -102,24 +140,68 @@ function DashboardLayout() {
          </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-brand-600/10 to-indigo-900/10 border border-brand-500/20 rounded-[40px] p-10 relative overflow-hidden group">
-         <div className="absolute right-0 top-0 translate-x-1/4 -translate-y-1/4 w-[400px] h-[400px] bg-brand-500/10 rounded-full blur-[100px] group-hover:opacity-100 opacity-50 transition-opacity" />
-         
-         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div className="space-y-4 text-left">
-               <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Intelligence Terminal v4.0</h2>
-               <p className="text-slate-400 text-sm leading-relaxed font-medium max-w-sm">Global recruitment node fully secured. Monitor real-time audit protocols and workforce telemetry.</p>
-               <div className="flex items-center gap-3 pt-2 text-[9px] font-bold text-brand-500 uppercase tracking-[.25rem]">
-                  <span className="animate-pulse">● Active</span>
-                  <span className="opacity-30">|</span>
-                  <span>ROOT Confirmed</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+         {/* Recent Activity Feed */}
+         <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-8 space-y-6">
+            <div className="flex items-center justify-between">
+               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Live Accession Feed</h3>
+               <Link href="/resumes" className="text-[10px] uppercase font-bold text-brand-500 hover:text-brand-400 transition-colors">Digital Archive →</Link>
+            </div>
+            
+            <div className="space-y-4">
+               {recentResumes.length === 0 ? (
+                  <p className="text-xs text-slate-600 italic py-4">No recent accessions found.</p>
+               ) : recentResumes.map((r, i) => (
+                  <div key={r.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all group cursor-pointer" onClick={() => router.push(`/resumes/${r.id}`)}>
+                     <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600/20 to-brand-900/20 flex items-center justify-center text-[10px] font-bold text-brand-500 border border-brand-500/10">
+                           {r.parsed_name?.charAt(0) || 'C'}
+                        </div>
+                        <div>
+                           <p className="text-xs font-bold text-slate-100 group-hover:text-brand-400 transition-colors">{r.parsed_name}</p>
+                           <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mt-0.5">{new Date(r.uploaded_at).toLocaleDateString()}</p>
+                        </div>
+                     </div>
+                     <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter border border-white/10 ${r.status === 'new' ? 'text-brand-400 bg-brand-400/5' : 'text-slate-500'}`}>{r.status}</span>
+                  </div>
+               ))}
+            </div>
+         </div>
+
+         {/* Talent Density Map */}
+         <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-8 space-y-8">
+            <div>
+               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Core Talent Density</h3>
+               <div className="flex flex-wrap gap-2">
+                  {topSkills.map((s, i) => (
+                     <div key={s} className="px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 text-[10px] font-bold text-slate-400 hover:border-brand-500/30 hover:text-brand-400 transition-all flex items-center gap-2">
+                        {s}
+                     </div>
+                  ))}
                </div>
             </div>
-            <div className="hidden lg:flex items-center justify-center">
-               <div className="w-36 h-36 bg-white/5 rounded-[2.5rem] p-6 border border-white/10 shadow-2xl rotate-6 group-hover:rotate-0 transition-all duration-700">
-                  <ShieldCheck size={90} className="text-brand-500/40" />
-               </div>
+            
+            <div className="space-y-6 pt-4 border-t border-white/5">
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                      <p className="text-[8px] uppercase font-black text-slate-600 tracking-widest mb-1">Node Stability</p>
+                      <p className="text-xl font-black text-amber-500">98.4%</p>
+                   </div>
+                   <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                      <p className="text-[8px] uppercase font-black text-slate-600 tracking-widest mb-1">Decrypt Speed</p>
+                      <p className="text-xl font-black text-brand-400">1.2s</p>
+                   </div>
+                </div>
+                
+                <div className="space-y-2">
+                   <div className="flex items-center justify-between">
+                      <span className="text-[9px] uppercase font-black text-slate-500">Resource Utilization</span>
+                      <span className="text-[9px] font-bold text-brand-400">42%</span>
+                   </div>
+                   <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                      <div className="bg-brand-500 h-full w-[42%] shadow-[0_0_10px_#6366f1]" />
+                   </div>
+                </div>
             </div>
          </div>
       </div>
