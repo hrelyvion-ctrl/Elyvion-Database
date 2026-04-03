@@ -268,9 +268,9 @@ function ResumesContent() {
   }
 
   return (
-    <div className="flex gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500 relative">
+    <div className="flex gap-8 items-start animate-in fade-in slide-in-from-bottom-2 duration-500 relative w-full">
       {/* Sidebar Folders */}
-      <aside className="w-64 shrink-0 px-2">
+      <aside className="w-56 shrink-0">
          <div className="glass rounded-[32px] p-6 border-white/5 space-y-6 shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             

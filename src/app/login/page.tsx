@@ -75,12 +75,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6 bg-grid-white/[0.02]">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-grid-white/[0.02]">
       {/* Background Glow */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-500/10 rounded-full blur-[160px] pointer-events-none opacity-50" />
       
       <div className="w-full max-w-sm relative z-10 animate-in zoom-in-95 duration-500">
-        <div className="bg-slate-900/40 backdrop-blur-2xl rounded-[40px] p-10 border border-white/5 shadow-2xl space-y-8 ring-1 ring-white/5">
+        <div className="bg-slate-900/40 backdrop-blur-2xl rounded-[40px] p-10 border border-white/5 shadow-2xl space-y-6 ring-1 ring-white/5">
           
           <div className="text-center space-y-2">
              <div className="w-16 h-16 bg-gradient-to-br from-brand-600 to-brand-700 rounded-3xl mx-auto flex items-center justify-center shadow-2xl shadow-brand-500/20 mb-4 transition-transform hover:scale-110">

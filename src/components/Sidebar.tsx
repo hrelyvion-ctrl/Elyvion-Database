@@ -68,7 +68,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-72 h-screen bg-[#020617] border-r border-white/5 flex flex-col sticky top-0 animate-in slide-in-from-left duration-700">
+    <aside className="w-full h-full bg-[#020617] flex flex-col animate-in slide-in-from-left duration-700">
       
       {/* 👑 PREMIUM ELYVION PHOENIX BRANDING */}
       <div className="p-10">
@@ -101,7 +101,7 @@ export function Sidebar() {
                 <div className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-amber-500/20 shadow-lg shadow-amber-500/10 text-amber-400' : 'bg-white/5 text-slate-500 group-hover:text-amber-400'}`}>
                   <item.icon size={18} />
                 </div>
-                <span className={`text-[13px] tracking-wide font-bold uppercase ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
+                <span className={`text-[14px] tracking-wide font-bold uppercase ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
                   {item.name}
                 </span>
               </div>
