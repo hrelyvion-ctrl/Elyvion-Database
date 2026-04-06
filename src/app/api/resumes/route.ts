@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/db'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function GET(req: NextRequest) {
   try {
@@ -24,7 +25,20 @@ export async function GET(req: NextRequest) {
     const allowedSorts = ['uploaded_at','parsed_name','experience_years','rating','updated_at']
     const safeSort = allowedSorts.includes(sort) ? sort : 'uploaded_at'
 
-    let query = supabase.from('resumes').select('id, filename, original_name, file_size, mime_type, parsed_name, parsed_email, parsed_phone, parsed_skills, parsed_education, parsed_summary, experience_years, status, rating, tags, notes, folder, uploaded_at, updated_at', { count: 'exact' })
+    const cookieStore = cookies()
+    const supabaseServer = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }) },
+          remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options }) },
+        },
+      }
+    )
+
+    let query = supabaseServer.from('resumes').select('id, filename, original_name, file_size, mime_type, parsed_name, parsed_email, parsed_phone, parsed_skills, parsed_education, parsed_summary, experience_years, status, rating, tags, notes, folder, uploaded_at, updated_at', { count: 'exact' })
 
     // Apply Standard Filters
     if (status !== 'all') query = query.eq('status', status)
@@ -76,11 +90,25 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const cookieStore = cookies()
+    const supabaseServer = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }) },
+          remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options }) },
+        },
+      }
+    )
+
     const { ids } = await req.json()
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: 'ids required' }, { status: 400 })
     }
-    const { error } = await supabase.from('resumes').delete().in('id', ids)
+
+    const { error } = await supabaseServer.from('resumes').delete().in('id', ids)
     if (error) throw error
     return NextResponse.json({ deleted: true })
   } catch (err: any) {

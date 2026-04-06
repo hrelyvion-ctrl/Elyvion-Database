@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-    const { data: resume, error: dbError } = await supabase
+    const { data: resume, error: dbError } = await supabaseServer
       .from('resumes')
       .select('filename, original_name')
       .eq('id', id)
@@ -33,8 +33,8 @@ export async function GET(req: NextRequest) {
 
     if (dbError || !resume) throw new Error('Resume not found')
 
-    // 1. Fetch file from storage
-    const { data: fileData, error: storageError } = await supabase.storage
+    // 1. Fetch file from storage using the authenticated client
+    const { data: fileData, error: storageError } = await supabaseServer.storage
       .from('resumes')
       .download(resume.filename)
 
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     // 2. AUDIT LOGGING: Record the download
     if (session) {
-       await supabase.from('audit_logs').insert({
+       await supabaseServer.from('audit_logs').insert({
           user_id: session.user.id,
           user_name: session.user.user_metadata?.full_name || session.user.email,
           action: 'download',

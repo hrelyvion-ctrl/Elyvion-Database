@@ -110,7 +110,9 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
     const folder = formData.get('folder') as string || 'Uncategorized'
-    const files = formData.getAll('file') as File[]
+    const files = formData.getAll('files') as File[]
+    
+    console.log(`Received upload request with ${files.length} files. Folder: ${folder}`)
     
     if (!files.length) {
       return NextResponse.json({ error: 'No files uploaded' }, { status: 400 })
@@ -124,8 +126,13 @@ export async function POST(req: NextRequest) {
         const mimeType = file.type || 'application/octet-stream'
         const uniqueName = `${Date.now()}-${file.name}`
 
-        // 1. Upload to Storage
-        const { error: storageError } = await supabase.storage
+        let displayName = file.name
+        if (displayName.endsWith('.zip')) {
+           displayName = displayName.replace(/\.zip$/, '')
+        }
+
+        // 1. Upload to Storage using the authenticated server client
+        const { error: storageError } = await supabaseServer.storage
           .from('resumes')
           .upload(uniqueName, buffer, { contentType: mimeType, upsert: true });
 
@@ -160,9 +167,9 @@ export async function POST(req: NextRequest) {
             ? parsed.suggestedFolder 
             : folder;
 
-        // 3. Database Insert
-        const { data, error } = await supabase.from('resumes').insert({
-            original_name: file.name,
+        // 3. Database Insert using the authenticated server client
+        const { data, error } = await supabaseServer.from('resumes').insert({
+            original_name: displayName,
             filename: uniqueName,
             file_path: uniqueName,
             file_size: buffer.length,
@@ -182,11 +189,14 @@ export async function POST(req: NextRequest) {
             folder: finalFolder,
         }).select().single()
 
-        if (error) throw error
+        if (error) {
+            console.error('Supabase DB Insert Error:', error)
+            throw error
+        }
 
         // 4. AUDIT LOGGING: Record the upload
         if (session) {
-           await supabase.from('audit_logs').insert({
+           await supabaseServer.from('audit_logs').insert({
               user_id: session.user.id,
               user_name: session.user.user_metadata?.full_name || session.user.email,
               action: 'upload',
@@ -196,6 +206,7 @@ export async function POST(req: NextRequest) {
 
         results.push({ name: file.name, status: 'success', id: data.id })
       } catch (fErr: any) {
+        console.error(`Error processing file ${file.name}:`, fErr)
         results.push({ name: file.name, status: fErr.message })
       }
     }

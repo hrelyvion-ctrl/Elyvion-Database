@@ -86,14 +86,16 @@ export default function UploadPage() {
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData })
       const data = await res.json()
+      console.log('Upload API Response:', data)
 
       setFiles(prev => {
         const results: Record<string, any> = {}
         for (const r of (data.results || [])) results[r.name] = r
         return prev.map(f => {
           if (f.status !== 'uploading') return f
-          const r = results[f.file.name]
-          if (!r) return { ...f, status: 'error', message: 'Unknown error' }
+          // Match against original name or zipped name
+          const r = results[f.file.name] || results[f.file.name + '.zip']
+          if (!r) return { ...f, status: 'error', message: data.error || 'Unknown error' }
           if (r.status === 'success') return { ...f, status: 'done', id: r.id }
           return { ...f, status: 'error', message: r.status }
         })
