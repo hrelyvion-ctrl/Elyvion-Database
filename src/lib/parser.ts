@@ -174,16 +174,21 @@ function extractSummary(lines: string[]): string {
 }
 
 function extractExperienceYears(text: string): number {
-  const match = text.match(/(\d+)\+?\s*years?\s*(of\s*)?(experience|exp)/i)
-  if (match) return parseInt(match[1])
+  // Priority 1: Direct summary mentions (e.g. "12+ years", "5 years of exp")
+  const summaryMatch = text.match(/(\d+\.?\d*)\+?\s*years?\s*(of\s*)?(experience|exp|professional\s*exp)/i)
+  if (summaryMatch) return parseFloat(summaryMatch[1])
   
-  // Count year ranges
-  const yearMatches = text.match(/\b(20\d{2}|19\d{2})\b/g)
+  // Priority 2: Count year ranges from 1990 onwards (ignoring older/irrelevant dates)
+  const currentYear = 2026
+  const yearMatches = text.match(/\b(20\d{2}|199\d{1})\b/g)
   if (yearMatches && yearMatches.length >= 2) {
-    const years = yearMatches.map(Number).sort()
-    const range = years[years.length - 1] - years[0]
+    const years = yearMatches.map(Number).filter(y => y <= currentYear).sort()
+    // Find the earliest professional-looking year (after 20 or 21 if it's a recent resume)
+    // For now, take the range but clamp to 30
+    const range = Math.max(0, years[years.length - 1] - years[0])
     return Math.min(range, 30)
   }
+  
   return 0
 }
 

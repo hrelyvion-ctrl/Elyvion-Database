@@ -50,11 +50,12 @@ async function extractWithAI(rawText: string) {
         "suggestedFolder": "AI | Software Engineer | Sales | Marketing | Design | Uncategorized"
       }
 
-      CRITICAL EXTRACTION RULES:
-      1. EXPERIENCE YEARS: Calculate 'experienceYears' as a single decimal. Use the total years stated in the professional summary (e.g. "11+ years" = 11.0). 
-      2. IGNORE EDUCATION: Do NOT add years from education, 10th/12th grade, or university duration into 'experienceYears'. 
-      3. ACCURACY: If the resume lists dates like "2014 - Present", and today is 2024, the result is 10.0. 
-      4. If a candidate says "11+ years of success", use 11.0 exactly.
+      CRITICAL EXTRACTION RULES (Current Date: April 2026):
+      1. EXPERIENCE YEARS: Calculate 'experienceYears' as a single decimal (e.g., 3.5). Sum up all unique professional work durations.
+      2. HANDLING "PRESENT": If a job says "to Present" or "to Current", use April 2026 as the end date.
+      3. IGNORE EDUCATION: Do NOT add years from education, degrees, 10th/12th grade, or university duration into 'experienceYears'. 
+      4. OVERLAPS: If multiple jobs overlap in time, do not double-count those years.
+      5. PRECISION: If the resume summarizes it (e.g., "11+ years of expertise"), use that value (11.0).
     `
 
     const result = await model.generateContent(prompt)
