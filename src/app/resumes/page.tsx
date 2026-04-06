@@ -369,10 +369,12 @@ function ResumesContent() {
                   {downloadingBulk ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                   Download {selected.size}
                 </button>
-                <button onClick={deleteSelected} disabled={deleting} className="btn bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 px-3 py-2 rounded-xl text-sm transition-all flex items-center gap-2">
-                  {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                  Delete {selected.size}
-                </button>
+                {['Senior', 'Master'].includes(profile?.role) && (
+                   <button onClick={deleteSelected} disabled={deleting} className="btn bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 px-3 py-2 rounded-xl text-sm transition-all flex items-center gap-2">
+                     {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                     Delete {selected.size}
+                   </button>
+                )}
               </>
             )}
             <button onClick={exportCSV} className="btn bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 px-3 py-2 rounded-xl text-sm flex items-center gap-2">

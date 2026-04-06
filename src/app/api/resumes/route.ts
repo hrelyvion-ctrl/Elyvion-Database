@@ -108,7 +108,32 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'ids required' }, { status: 400 })
     }
 
+    // 1. Check Permissions
+    const { data: { session } } = await supabaseServer.auth.getSession()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { data: profile } = await supabaseServer
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+
+    if (!profile || !['Senior', 'Master'].includes(profile.role)) {
+      return NextResponse.json({ error: 'Forbidden: Insufficient permissions to delete profiles' }, { status: 403 })
+    }
+
     const { error } = await supabaseServer.from('resumes').delete().in('id', ids)
+    
+    // 2. AUDIT LOGGING: Record the deletion
+    if (session) {
+       await supabaseServer.from('audit_logs').insert({
+          user_id: session.user.id,
+          user_name: session.user.user_metadata?.full_name || session.user.email,
+          action: 'delete',
+          details: { count: ids.length, ids }
+       })
+    }
+
     if (error) throw error
     return NextResponse.json({ deleted: true })
   } catch (err: any) {
