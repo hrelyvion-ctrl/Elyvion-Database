@@ -46,6 +46,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       const originalFile = Object.values(zip.files).find(f => !f.dir)
       if (originalFile) {
         finalData = await originalFile.async('uint8array')
+        // Correct mime-type based on extracted file extension
+        const ext = originalFile.name.toLowerCase().split('.').pop()
+        if (ext === 'pdf') finalMime = 'application/pdf'
+        else if (ext === 'docx') finalMime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        else if (ext === 'txt') finalMime = 'text/plain'
       }
     }
 
@@ -53,6 +58,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       headers: {
         'Content-Type': finalMime,
         'Content-Disposition': `inline; filename="${record.original_name}"`,
+        'Cache-Control': 'public, max-age=3600',
+        'X-Content-Type-Options': 'nosniff',
       },
     })
   } catch (err: any) {

@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/db'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const cookieStore = cookies()
+  const supabaseServer = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value },
+        set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }) },
+        remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options }) },
+      },
+    }
+  )
+
   try {
-    const { data, error } = await supabase.from('resumes').select('*').eq('id', parseInt(params.id)).single()
+    const { data, error } = await supabaseServer.from('resumes').select('*').eq('id', parseInt(params.id)).single()
     if (error) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json(data)
   } catch (err: any) {
@@ -18,6 +32,19 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const cookieStore = cookies()
+  const supabaseServer = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value },
+        set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }) },
+        remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options }) },
+      },
+    }
+  )
+
   try {
     const body = await req.json()
     const id = parseInt(params.id)
@@ -35,7 +62,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
     }
 
-    const { data, error } = await supabase.from('resumes').update(updates).eq('id', id).select().single()
+    const { data, error } = await supabaseServer.from('resumes').update(updates).eq('id', id).select().single()
     
     if (error) throw error
     return NextResponse.json(data)
@@ -48,8 +75,21 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const cookieStore = cookies()
+  const supabaseServer = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value },
+        set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }) },
+        remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options }) },
+      },
+    }
+  )
+
   try {
-    const { error } = await supabase.from('resumes').delete().eq('id', parseInt(params.id))
+    const { error } = await supabaseServer.from('resumes').delete().eq('id', parseInt(params.id))
     if (error) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json({ deleted: true })
   } catch (err: any) {
