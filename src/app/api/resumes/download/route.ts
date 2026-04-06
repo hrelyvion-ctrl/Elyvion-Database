@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { supabase } from '@/lib/db'
+import JSZip from 'jszip'
 
 export async function GET(req: NextRequest) {
   const cookieStore = cookies()
@@ -27,18 +27,30 @@ export async function GET(req: NextRequest) {
 
     const { data: resume, error: dbError } = await supabaseServer
       .from('resumes')
-      .select('filename, original_name')
+      .select('filename, original_name, mime_type')
       .eq('id', id)
       .single()
 
     if (dbError || !resume) throw new Error('Resume not found')
 
-    // 1. Fetch file from storage using the authenticated client
+    // 1. Fetch file from storage
     const { data: fileData, error: storageError } = await supabaseServer.storage
       .from('resumes')
       .download(resume.filename)
 
-    if (storageError) throw storageError
+    if (storageError || !fileData) throw storageError || new Error('File download failed')
+
+    let finalData: Buffer | Blob = fileData
+    let finalMime = resume.mime_type || 'application/octet-stream'
+
+    // If it's a zip (compressed), unzip it on the fly to return the original format
+    if (resume.filename.endsWith('.zip')) {
+      const zip = await JSZip.loadAsync(fileData)
+      const originalFile = Object.values(zip.files).find(f => !f.dir)
+      if (originalFile) {
+        finalData = await originalFile.async('nodebuffer')
+      }
+    }
 
     // 2. AUDIT LOGGING: Record the download
     if (session) {
@@ -50,9 +62,9 @@ export async function GET(req: NextRequest) {
        })
     }
 
-    return new Response(fileData, {
+    return new Response(finalData as any, {
       headers: {
-        'Content-Type': 'application/octet-stream',
+        'Content-Type': finalMime,
         'Content-Disposition': `attachment; filename="${resume.original_name}"`,
       },
     })

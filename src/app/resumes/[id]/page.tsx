@@ -153,10 +153,11 @@ export default function ResumeDetailPage() {
 
           {/* Actions */}
           <div className="flex gap-2 shrink-0">
-            <a href={`/api/file/${resume.id}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" title="Download">
+            <a href={`/api/resumes/download?id=${resume.id}`} target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-brand-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-500 transition-all shadow-lg flex items-center gap-3" title="Download Resume (Original Format)">
               <Download size={15} />
+              <span>Download Dataset</span>
             </a>
-            <button onClick={deleteResume} className="btn btn-danger" title="Delete">
+            <button onClick={deleteResume} className="p-3 bg-rose-500/10 text-rose-500 rounded-2xl border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all shadow-xl" title="Delete Profile">
               <Trash2 size={15} />
             </button>
           </div>
