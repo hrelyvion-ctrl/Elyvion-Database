@@ -1,3 +1,4 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import JSZip from 'jszip'
@@ -28,26 +29,27 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     if (dbError || !record) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    const { data, error: storageError } = await supabaseServer.storage
+    const { data: fileData, error: storageError } = await supabaseServer.storage
       .from('resumes')
       .download(record.filename)
 
-    if (storageError || !data) throw storageError || new Error('File download failed')
+    if (storageError || !fileData) throw storageError || new Error('File download failed')
 
-    let finalData: Buffer | Blob = data
+    // Convert Blob to ArrayBuffer for JSZip compatibility
+    const arrayBuffer = await fileData.arrayBuffer()
+    let finalData: Uint8Array | ArrayBuffer = arrayBuffer
     let finalMime = record.mime_type || 'application/pdf'
 
     // If it was compressed, unzip it on the fly for preview
     if (record.filename.endsWith('.zip')) {
-      const zip = await JSZip.loadAsync(data)
+      const zip = await JSZip.loadAsync(arrayBuffer)
       const originalFile = Object.values(zip.files).find(f => !f.dir)
       if (originalFile) {
-        const buffer = await originalFile.async('nodebuffer')
-        finalData = buffer
+        finalData = await originalFile.async('uint8array')
       }
     }
 
-    return new Response(finalData, {
+    return new Response(finalData as any, {
       headers: {
         'Content-Type': finalMime,
         'Content-Disposition': `inline; filename="${record.original_name}"`,

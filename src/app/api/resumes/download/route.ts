@@ -40,15 +40,17 @@ export async function GET(req: NextRequest) {
 
     if (storageError || !fileData) throw storageError || new Error('File download failed')
 
-    let finalData: Buffer | Blob = fileData
+    // Convert Blob to ArrayBuffer for JSZip compatibility
+    const arrayBuffer = await fileData.arrayBuffer()
+    let finalData: Uint8Array | ArrayBuffer = arrayBuffer
     let finalMime = resume.mime_type || 'application/octet-stream'
 
     // If it's a zip (compressed), unzip it on the fly to return the original format
     if (resume.filename.endsWith('.zip')) {
-      const zip = await JSZip.loadAsync(fileData)
+      const zip = await JSZip.loadAsync(arrayBuffer)
       const originalFile = Object.values(zip.files).find(f => !f.dir)
       if (originalFile) {
-        finalData = await originalFile.async('nodebuffer')
+        finalData = await originalFile.async('uint8array')
       }
     }
 
