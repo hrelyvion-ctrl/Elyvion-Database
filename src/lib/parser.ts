@@ -64,7 +64,7 @@ function extractName(lines: string[]): string {
       cleaned.length > 3 &&
       cleaned.length < 50 &&
       /^[A-Za-z\s.\-']+$/.test(cleaned) &&
-      !/^(resume|curriculum|vitae|cv|page|email|phone|contact|address|mobile|summary|objective|academic|profile|personal\s*details)/i.test(cleaned) &&
+      !/^(resume|curriculum|vitae|cv|page|email|phone|contact|address|mobile|summary|objective|career\s*objective|academic|profile|personal\s*details)/i.test(cleaned) &&
       !cleaned.includes('@') &&
       !/\d/.test(cleaned)
     ) {

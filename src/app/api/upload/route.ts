@@ -61,7 +61,7 @@ async function extractWithAI(rawText: string) {
       }
 
       CRITICAL EXTRACTION RULES (Current Date: April 2026):
-      1. NAME: The name is usually at the very top of the text. Do not return "Unknown" or "N/A" if any human-like name is present.
+      1. NAME: The name is usually at the very top of the text. Do not return "Unknown" or "N/A" if any human-like name is present. CRITICAL: Do NOT extract document titles or section headers like "RESUME", "CURRICULUM VITAE", "CV", "ACADEMIC PROFILE", "PROFILE", "CAREER OBJECTIVE", "OBJECTIVE", or "PERSONAL DETAILS" as the name. Look for the actual human name (e.g., "John Doe", "Naresh Pal Singh"). Sometimes the name is explicitly labeled inside the document (e.g., "Name : Naresh Pal Singh" or "Name- Naresh").
       2. EXPERIENCE YEARS: Calculate 'experienceYears' as a single decimal (e.g., 3.5). Sum up all unique professional work durations.
       3. HANDLING "PRESENT": If a job says "to Present" or "to Current", use April 2026 as the end date.
       4. IGNORE EDUCATION: Do NOT add years from education, degrees, 10th/12th grade, or university duration into 'experienceYears'. 
