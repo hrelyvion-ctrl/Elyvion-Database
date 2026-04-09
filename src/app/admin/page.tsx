@@ -3,7 +3,8 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useEffect, useState, useCallback } from 'react'
 import { 
   Users, Shield, CheckCircle, XCircle, Clock, 
-  Activity, ChevronRight, UserMinus
+  Activity, UserMinus, Upload, Download, Trash2,
+  LogIn, FolderPlus, Tag, RefreshCw, AlertCircle
 } from 'lucide-react'
 
 interface Profile {
@@ -23,6 +24,37 @@ interface AuditLog {
   created_at: string
 }
 
+const ACTION_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
+  upload:        { label: 'Upload',         color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', icon: Upload },
+  download:      { label: 'Download',       color: 'text-sky-400',     bg: 'bg-sky-500/10 border-sky-500/20',         icon: Download },
+  delete:        { label: 'Delete',         color: 'text-rose-400',    bg: 'bg-rose-500/10 border-rose-500/20',       icon: Trash2 },
+  delete_resume: { label: 'Delete Resume',  color: 'text-rose-400',    bg: 'bg-rose-500/10 border-rose-500/20',       icon: Trash2 },
+  update_resume: { label: 'Update Resume',  color: 'text-amber-400',   bg: 'bg-amber-500/10 border-amber-500/20',     icon: Activity },
+  bulk_update:   { label: 'Bulk Update',    color: 'text-amber-400',   bg: 'bg-amber-500/10 border-amber-500/20',     icon: Activity },
+  login:         { label: 'Login',          color: 'text-brand-400',   bg: 'bg-brand-600/10 border-brand-500/20',     icon: LogIn },
+  create_folder: { label: 'Create Folder',  color: 'text-purple-400',  bg: 'bg-purple-500/10 border-purple-500/20',   icon: FolderPlus },
+  delete_folder: { label: 'Delete Folder',  color: 'text-rose-400',    bg: 'bg-rose-500/10 border-rose-500/20',       icon: Trash2 },
+  create_tag:    { label: 'Create Tag',     color: 'text-pink-400',    bg: 'bg-pink-500/10 border-pink-500/20',       icon: Tag },
+  delete_tag:    { label: 'Delete Tag',     color: 'text-rose-400',    bg: 'bg-rose-500/10 border-rose-500/20',       icon: Tag },
+}
+
+function getActionDetail(log: AuditLog): string {
+  const d = log.details
+  if (!d) return ''
+  if (log.action === 'upload')        return d.filename ? `File: ${d.filename}` : ''
+  if (log.action === 'download')      return d.filename ? `File: ${d.filename}` : ''
+  if (log.action === 'delete')        return d.count ? `${d.count} resume(s) deleted` : ''
+  if (log.action === 'delete_resume') return d.resume_id ? `Resume ID: ${d.resume_id}` : ''
+  if (log.action === 'update_resume') return d.updates ? `Changed: ${Object.keys(d.updates).join(', ')}` : ''
+  if (log.action === 'bulk_update')   return d.count ? `${d.count} resume(s) updated` : ''
+  if (log.action === 'login')        return d.ip ? `IP: ${d.ip}` : 'Session started'
+  if (log.action === 'create_folder') return d.folder_name ? `Folder: ${d.folder_name}` : ''
+  if (log.action === 'delete_folder') return d.folder_name ? `Folder: ${d.folder_name}` : ''
+  if (log.action === 'create_tag')   return d.tag_name ? `Tag: ${d.tag_name}` : ''
+  if (log.action === 'delete_tag')   return d.tag_id ? `Tag ID: ${d.tag_id}` : ''
+  return ''
+}
+
 export default function AdminDashboard() {
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,17 +63,33 @@ export default function AdminDashboard() {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshingLogs, setRefreshingLogs] = useState(false)
   const [activeTab, setActiveTab] = useState<'users' | 'logs'>('users')
+
+  const fetchLogs = useCallback(async (showRefresh = false) => {
+    if (showRefresh) setRefreshingLogs(true)
+    try {
+      const logsRes = await fetch('/api/admin/logs?limit=100')
+      if (logsRes.ok) {
+        const lData = await logsRes.json()
+        if (Array.isArray(lData)) setLogs(lData)
+      }
+    } catch (err) {
+      console.error('Failed to fetch audit logs:', err)
+    }
+    if (showRefresh) setRefreshingLogs(false)
+  }, [])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
+    // Fetch profiles directly - RLS allows authenticated users to read profiles
     const { data: pData } = await supabase.from('profiles').select('*').order('created_at', { ascending: false })
-    const { data: lData } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50)
-    
     if (pData) setProfiles(pData)
-    if (lData) setLogs(lData)
+
+    // Fetch audit logs via server-side API route to bypass RLS restrictions
+    await fetchLogs()
     setLoading(false)
-  }, [supabase])
+  }, [supabase, fetchLogs])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -63,19 +111,34 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-bold gradient-text">Master Control Room</h1>
             <p className="text-slate-400 text-sm mt-1">Manage accounts, roles, and enterprise security.</p>
          </div>
-         <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
-            <button 
-              onClick={() => setActiveTab('users')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'users' ? 'bg-brand-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-               <Users size={14} className="inline mr-2" /> Team Accounts
-            </button>
-            <button 
-              onClick={() => setActiveTab('logs')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'logs' ? 'bg-brand-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-               <Activity size={14} className="inline mr-2" /> System Logs
-            </button>
+         <div className="flex items-center gap-3">
+           {activeTab === 'logs' && (
+             <button
+               onClick={() => fetchLogs(true)}
+               disabled={refreshingLogs}
+               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white text-xs font-bold transition-all"
+             >
+               <RefreshCw size={13} className={refreshingLogs ? 'animate-spin' : ''} />
+               Refresh
+             </button>
+           )}
+           <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
+              <button 
+                onClick={() => setActiveTab('users')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'users' ? 'bg-brand-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                 <Users size={14} className="inline mr-2" /> Team Accounts
+              </button>
+              <button 
+                onClick={() => setActiveTab('logs')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'logs' ? 'bg-brand-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                 <Activity size={14} className="inline mr-2" /> System Logs
+                 {logs.length > 0 && (
+                   <span className="ml-1.5 px-1.5 py-0.5 text-[9px] rounded-full bg-brand-500/20 text-brand-400">{logs.length}</span>
+                 )}
+              </button>
+           </div>
          </div>
       </div>
 
@@ -136,26 +199,59 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <div className="glass rounded-[32px] overflow-hidden border-white/5">
-           <div className="p-6 border-b border-white/5 bg-white/[0.01]">
-              <h2 className="text-xs uppercase font-black text-slate-500 tracking-widest text-center">Activity Timeline</h2>
+           <div className="px-6 py-5 border-b border-white/5 bg-white/[0.01] flex items-center justify-between">
+              <h2 className="text-xs uppercase font-black text-slate-500 tracking-widest">Activity Timeline</h2>
+              <span className="text-[10px] text-slate-600 font-black uppercase tracking-widest">
+                {logs.length} event{logs.length !== 1 ? 's' : ''} recorded
+              </span>
            </div>
-           <div className="divide-y divide-white/5 max-h-[600px] overflow-y-auto p-4 space-y-3">
-              {logs.map(log => (
-                 <div key={log.id} className="flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 group">
-                    <div className="w-8 h-8 rounded-xl bg-brand-600/10 flex items-center justify-center shrink-0">
-                       <Clock size={14} className="text-brand-400" />
+           <div className="max-h-[680px] overflow-y-auto p-4 space-y-2">
+              {logs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center">
+                    <AlertCircle size={24} className="text-slate-700" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-500">No activity recorded yet</p>
+                    <p className="text-[10px] text-slate-700 mt-1 font-medium">Actions by your team will appear here automatically.</p>
+                  </div>
+                </div>
+              ) : logs.map(log => {
+                const cfg = ACTION_CONFIG[log.action] || {
+                  label: log.action,
+                  color: 'text-slate-400',
+                  bg: 'bg-white/5 border-white/10',
+                  icon: Clock
+                }
+                const IconComp = cfg.icon
+                const detail = getActionDetail(log)
+                return (
+                  <div key={log.id} className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.03] transition-colors group">
+                    <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${cfg.bg}`}>
+                      <IconComp size={13} className={cfg.color} />
                     </div>
-                    <div className="flex-1">
-                       <p className="text-sm text-slate-300">
-                          <span className="font-bold text-white uppercase">{log.user_name}</span> 
-                          <span className="mx-2 text-[10px] uppercase font-black tracking-widest text-slate-700">performed</span> 
-                          <span className="px-2 py-0.5 rounded bg-brand-600/20 text-brand-400 text-[10px] font-bold uppercase tracking-widest">{log.action}</span>
-                       </p>
-                       <p className="text-[11px] text-slate-600 mt-1 font-medium italic">{new Date(log.created_at).toLocaleString()}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-black text-white uppercase tracking-tight">
+                          {log.user_name || 'System'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md border text-[9px] font-black uppercase tracking-widest ${cfg.bg} ${cfg.color}`}>
+                          {cfg.label}
+                        </span>
+                        {detail && (
+                          <span className="text-[10px] text-slate-600 font-medium truncate max-w-[240px]">{detail}</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-700 mt-0.5 font-medium">
+                        {new Date(log.created_at).toLocaleString('en-IN', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit', second: '2-digit'
+                        })}
+                      </p>
                     </div>
-                    <ChevronRight size={16} className="text-slate-800" />
-                 </div>
-              ))}
+                  </div>
+                )
+              })}
            </div>
         </div>
       )}

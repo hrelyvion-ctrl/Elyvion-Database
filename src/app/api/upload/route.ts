@@ -32,7 +32,7 @@ async function extractWithAI(rawText: string) {
       
       Resume Text:
       """
-      ${rawText.slice(0, 8000)} 
+      ${rawText.slice(0, 10000)} 
       """
 
       Return ONLY a JSON object with exactly these keys:
@@ -51,11 +51,12 @@ async function extractWithAI(rawText: string) {
       }
 
       CRITICAL EXTRACTION RULES (Current Date: April 2026):
-      1. EXPERIENCE YEARS: Calculate 'experienceYears' as a single decimal (e.g., 3.5). Sum up all unique professional work durations.
-      2. HANDLING "PRESENT": If a job says "to Present" or "to Current", use April 2026 as the end date.
-      3. IGNORE EDUCATION: Do NOT add years from education, degrees, 10th/12th grade, or university duration into 'experienceYears'. 
-      4. OVERLAPS: If multiple jobs overlap in time, do not double-count those years.
-      5. PRECISION: If the resume summarizes it (e.g., "11+ years of expertise"), use that value (11.0).
+      1. NAME: The name is usually at the very top of the text. Do not return "Unknown" or "N/A" if any human-like name is present.
+      2. EXPERIENCE YEARS: Calculate 'experienceYears' as a single decimal (e.g., 3.5). Sum up all unique professional work durations.
+      3. HANDLING "PRESENT": If a job says "to Present" or "to Current", use April 2026 as the end date.
+      4. IGNORE EDUCATION: Do NOT add years from education, degrees, 10th/12th grade, or university duration into 'experienceYears'. 
+      5. OVERLAPS: If multiple jobs overlap in time, do not double-count those years.
+      6. PRECISION: If the resume summarizes it (e.g., "11+ years of expertise"), use that value (11.0).
     `
 
     const result = await model.generateContent(prompt)

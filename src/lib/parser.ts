@@ -57,20 +57,32 @@ export function parseResume(rawText: string): ParsedResume {
 }
 
 function extractName(lines: string[]): string {
-  // Name is usually in the first 5 non-empty lines, all caps or title case, no special chars
-  for (const line of lines.slice(0, 8)) {
+  // Name is usually in the first 8 non-empty lines, all caps or title case, no special chars
+  for (const line of lines.slice(0, 10)) {
+    const cleaned = line.trim()
     if (
-      line.length > 3 &&
-      line.length < 60 &&
-      /^[A-Za-z\s.\-']+$/.test(line) &&
-      !line.toLowerCase().includes('resume') &&
-      !line.toLowerCase().includes('curriculum') &&
-      !line.includes('@') &&
-      !/\d/.test(line)
+      cleaned.length > 3 &&
+      cleaned.length < 50 &&
+      /^[A-Za-z\s.\-']+$/.test(cleaned) &&
+      !/^(resume|curriculum|vitae|cv|page|email|phone|contact|address|mobile|summary|objective)/i.test(cleaned) &&
+      !cleaned.includes('@') &&
+      !/\d/.test(cleaned)
     ) {
-      return toTitleCase(line)
+      return toTitleCase(cleaned)
     }
   }
+  
+  // Backup: Try to find name line before the email line if not found
+  const emailIdx = lines.findIndex(l => l.includes('@'))
+  if (emailIdx > 0) {
+    for (let i = emailIdx - 1; i >= Math.max(0, emailIdx - 3); i--) {
+        const line = lines[i].trim()
+        if (line.length > 3 && line.length < 50 && /^[A-Za-z\s.\-']+$/.test(line) && !/\d/.test(line)) {
+            return toTitleCase(line)
+        }
+    }
+  }
+
   return 'Unknown'
 }
 

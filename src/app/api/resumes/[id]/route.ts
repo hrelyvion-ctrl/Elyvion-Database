@@ -62,9 +62,21 @@ export async function PATCH(
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
     }
 
+    const { data: { session } } = await supabaseServer.auth.getSession()
     const { data, error } = await supabaseServer.from('resumes').update(updates).eq('id', id).select().single()
     
     if (error) throw error
+
+    // AUDIT LOGGING
+    if (session) {
+       await supabaseServer.from('audit_logs').insert({
+          user_id: session.user.id,
+          user_name: session.user.user_metadata?.full_name || session.user.email,
+          action: 'update_resume',
+          details: { resume_id: id, updates }
+       })
+    }
+
     return NextResponse.json(data)
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
@@ -89,8 +101,21 @@ export async function DELETE(
   )
 
   try {
+    const { data: { session } } = await supabaseServer.auth.getSession()
     const { error } = await supabaseServer.from('resumes').delete().eq('id', parseInt(params.id))
+    
     if (error) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+    // AUDIT LOGGING
+    if (session) {
+       await supabaseServer.from('audit_logs').insert({
+          user_id: session.user.id,
+          user_name: session.user.user_metadata?.full_name || session.user.email,
+          action: 'delete_resume',
+          details: { resume_id: params.id }
+       })
+    }
+
     return NextResponse.json({ deleted: true })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
