@@ -16,22 +16,26 @@ export async function GET(req: NextRequest) {
     }
   )
 
+  // Gracefully handle if RLS blocks the read — return zeros rather than crash
   const { data: logs } = await supabase
     .from('audit_logs')
     .select('action, created_at, user_name')
-    .gte('created_at', new Date(new Date().getFullYear(), 0, 1).toISOString()) // Current year
+    .gte('created_at', new Date(new Date().getFullYear(), 0, 1).toISOString())
 
-  if (!logs) return NextResponse.json({ error: 'Failed to fetch logs' }, { status: 500 })
+  const safeLogs = logs || []
 
-  // 1. Individual counts
+  // 1. Individual counts per user
   const individualCounts: Record<string, { uploads: number, deletes: number, logins: number }> = {}
   
-  // 2. Monthly counts (individual by action)
+  // 2. Monthly counts
   const monthlyCounts: Record<string, { uploads: number, deletes: number }> = {}
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   months.forEach(m => monthlyCounts[m] = { uploads: 0, deletes: 0 })
 
-  logs.forEach(log => {
+  // All delete-type actions
+  const DELETE_ACTIONS = ['delete', 'delete_resume', 'bulk_update']
+
+  safeLogs.forEach(log => {
       const u = log.user_name || 'Unknown'
       if (!individualCounts[u]) individualCounts[u] = { uploads: 0, deletes: 0, logins: 0 }
       
@@ -41,7 +45,7 @@ export async function GET(req: NextRequest) {
       if (log.action === 'upload') {
           individualCounts[u].uploads++
           if (monthlyCounts[monthLabel]) monthlyCounts[monthLabel].uploads++
-      } else if (log.action === 'delete') {
+      } else if (DELETE_ACTIONS.includes(log.action)) {
           individualCounts[u].deletes++
           if (monthlyCounts[monthLabel]) monthlyCounts[monthLabel].deletes++
       } else if (log.action === 'login') {
@@ -52,8 +56,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     individual: Object.entries(individualCounts).map(([name, stats]) => ({ name, ...stats })),
     monthly: Object.entries(monthlyCounts).map(([month, stats]) => ({ month, ...stats })),
-    totalUploads: logs.filter(l => l.action === 'upload').length,
-    totalDeletes: logs.filter(l => l.action === 'delete').length,
-    totalLogins: logs.filter(l => l.action === 'login').length
+    totalUploads: safeLogs.filter(l => l.action === 'upload').length,
+    totalDeletes: safeLogs.filter(l => DELETE_ACTIONS.includes(l.action)).length,
+    totalLogins: safeLogs.filter(l => l.action === 'login').length
   })
 }

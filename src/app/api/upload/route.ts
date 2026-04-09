@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { supabase } from '@/lib/db'
 import { parseResume } from '@/lib/parser'
 import pdf from 'pdf-parse'
 import mammoth from 'mammoth'
 import path from 'path'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import JSZip from 'jszip'
+
+/**
+ * Sanitize a filename for Supabase Storage.
+ * Replaces spaces and any character that is not alphanumeric, dash, underscore, or dot with underscores.
+ */
+function sanitizeStorageKey(filename: string): string {
+  return filename
+    .replace(/\s+/g, '_')            // spaces → underscore
+    .replace(/[^a-zA-Z0-9._\-]/g, '_') // any other special char → underscore
+    .replace(/_+/g, '_')              // collapse consecutive underscores
+}
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '')
@@ -126,8 +136,11 @@ export async function POST(req: NextRequest) {
         const buffer = Buffer.from(await file.arrayBuffer())
         const ext = path.extname(file.name).toLowerCase()
         const mimeType = file.type || 'application/octet-stream'
-        const uniqueName = `${Date.now()}-${file.name}`
+        // Sanitize filename so Supabase Storage doesn't reject it (no brackets, spaces, etc.)
+        const sanitizedName = sanitizeStorageKey(file.name)
+        const uniqueName = `${Date.now()}-${sanitizedName}`
 
+        // Keep the human-readable display name (original filename without .zip)
         let displayName = file.name
         if (displayName.endsWith('.zip')) {
            displayName = displayName.replace(/\.zip$/, '')

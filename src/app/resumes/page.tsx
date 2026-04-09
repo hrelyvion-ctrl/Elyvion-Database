@@ -248,23 +248,48 @@ function ResumesContent() {
   }
 
   const exportCSV = () => {
-    const headers = ['Name', 'Email', 'Experience', 'Rating', 'Status', 'Skills', 'Uploaded']
-    const rows = resumes.map(r => [
-      r.parsed_name,
-      r.parsed_email,
-      r.experience_years,
-      r.rating,
-      r.status,
-      Array.isArray(r.parsed_skills) ? r.parsed_skills.join(', ') : r.parsed_skills,
-      new Date(r.uploaded_at).toLocaleDateString()
-    ])
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n")
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement("a")
-    link.setAttribute("href", encodedUri)
-    link.setAttribute("download", "resumes_export.csv")
+    // If items are selected, export only those; otherwise export all visible resumes
+    const toExport = selected.size > 0
+      ? resumes.filter(r => selected.has(r.id))
+      : resumes
+
+    const headers = ['Name', 'Phone', 'Email', 'Experience (Years)', 'Rating', 'Status', 'Skills', 'Folder', 'Uploaded']
+    const rows = toExport.map(r => {
+      let skills: string[] = []
+      try { skills = typeof r.parsed_skills === 'string' ? JSON.parse(r.parsed_skills) : (r.parsed_skills || []) } catch {}
+      // Escape fields that might contain commas or quotes
+      const escape = (val: any) => {
+        const str = String(val ?? '')
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`
+        }
+        return str
+      }
+      return [
+        escape(r.parsed_name),
+        escape(r.parsed_phone),
+        escape(r.parsed_email),
+        escape(r.experience_years),
+        escape(r.rating),
+        escape(r.status),
+        escape(skills.join('; ')),
+        escape(r.folder),
+        escape(new Date(r.uploaded_at).toLocaleDateString('en-IN'))
+      ]
+    })
+
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = selected.size > 0
+      ? `resumes_selected_${selected.size}_${Date.now()}.csv`
+      : `resumes_all_${Date.now()}.csv`
     document.body.appendChild(link)
     link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -378,7 +403,8 @@ function ResumesContent() {
               </>
             )}
             <button onClick={exportCSV} className="btn bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 px-3 py-2 rounded-xl text-sm flex items-center gap-2">
-              <Download size={16} /> Export CSV
+              <Download size={16} />
+              {selected.size > 0 ? `Export Selected (${selected.size})` : 'Export CSV'}
             </button>
             <Link href="/upload" className="btn bg-brand-600 text-white hover:bg-brand-500 px-3 py-2 rounded-xl text-sm flex items-center gap-2 shadow-lg shadow-brand-500/20">
               <Users size={16} /> Upload New
