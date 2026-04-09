@@ -65,11 +65,11 @@ async function extractWithAI(rawText: string, filename: string) {
 
       CRITICAL EXTRACTION RULES (Current Date: April 2026):
       1. NAME: The name is usually at the very top of the text. Do not return "Unknown" or "N/A" if any human-like name is present. CRITICAL: Do NOT extract document titles or section headers like "RESUME", "CURRICULUM VITAE", "CV", "ACADEMIC PROFILE", "PROFILE", "CAREER OBJECTIVE", "OBJECTIVE", or "PERSONAL DETAILS" as the name. Look for the actual human name (e.g., "John Doe", "Naresh Pal Singh"). Sometimes the name is explicitly labeled inside the document (e.g., "Name : Naresh Pal Singh" or "Name- Naresh").
-      2. EXPERIENCE YEARS: Calculate 'experienceYears' as a single decimal (e.g., 3.5). Sum up all unique professional work durations.
+      2. EXPERIENCE YEARS: Calculate 'experienceYears' as a single decimal (e.g., 3.5). Sum up all unique professional work durations. CRITICAL: If the document formatting is broken and spaces are missing (e.g. "10Yearsofdiversifiedexperience" or "over5Yearsofexperience" or "8+years"), you MUST still extract this number (10.0, 5.0, 8.0). Do not output 0.0 if the candidate clearly has experience.
       3. HANDLING "PRESENT": If a job says "to Present" or "to Current", use April 2026 as the end date.
       4. IGNORE EDUCATION: Do NOT add years from education, degrees, 10th/12th grade, or university duration into 'experienceYears'. 
       5. OVERLAPS: If multiple jobs overlap in time, do not double-count those years.
-      6. PRECISION: If the resume summarizes it (e.g., "11+ years of expertise"), use that value (11.0).
+      6. PRECISION: If the resume summarizes it in the objective/summary (e.g., "11+ years of expertise" or "10Yearsofexperience"), prioritize that value over manually calculating timelines from broken text.
     `
 
     const result = await model.generateContent(prompt)

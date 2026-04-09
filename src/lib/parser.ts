@@ -198,8 +198,8 @@ function extractSummary(lines: string[]): string {
 }
 
 function extractExperienceYears(text: string): number {
-  // Priority 1: Direct summary mentions (e.g. "12+ years", "5 years of exp")
-  const summaryMatch = text.match(/(\d+\.?\d*)\+?\s*years?\s*(of\s*)?(experience|exp|professional\s*exp)/i)
+  // Priority 1: Direct summary mentions (e.g. "12+ years", "5 years of exp", or mashed "10Yearsofdiversifiedexperience")
+  const summaryMatch = text.match(/(\d+\.?\d*)\+?\s*years?[\w\s]{0,30}(experience|exp|professional)/i)
   if (summaryMatch) return parseFloat(summaryMatch[1])
   
   // Priority 2: Count year ranges from 1990 onwards (ignoring older/irrelevant dates)
