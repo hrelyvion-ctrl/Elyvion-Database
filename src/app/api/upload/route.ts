@@ -34,12 +34,15 @@ async function generateEmbedding(text: string) {
   }
 }
 
-async function extractWithAI(rawText: string) {
+async function extractWithAI(rawText: string, filename: string) {
   try {
     const prompt = `
       You are an expert HR resume parser. Extract the following information from the resume text provided below into a structured JSON format. 
       Be extremely accurate with name, email, and total years of professional experience.
       
+      File Name: ${filename}
+      (Use the File Name as a strong hint for the candidate's real name, e.g., "John_Doe_Resume.pdf" -> "John Doe").
+
       Resume Text:
       """
       ${rawText.slice(0, 10000)} 
@@ -76,13 +79,14 @@ async function extractWithAI(rawText: string) {
     // Clean JSON response (GEMINI sometimes wraps in ```json ... ```)
     const cleanJson = text.replace(/```json|```/g, '').trim()
     return JSON.parse(cleanJson)
+    return JSON.parse(cleanJson)
   } catch (err) {
     console.error('Gemini Parse Error, falling back to Regex:', err)
-    return parseResume(rawText) // Fallback to our local parser
+    return parseResume(rawText, filename) // Fallback to our local parser
   }
 }
 
-async function extractDocumentData(buffer: Buffer, ext: string) {
+async function extractDocumentData(buffer: Buffer, ext: string, filename: string) {
     let rawText = '';
     if (ext === '.pdf') {
         const data = await pdf(buffer);
@@ -95,7 +99,7 @@ async function extractDocumentData(buffer: Buffer, ext: string) {
     }
     
     // Using Gemini for High Precision Extraction
-    const parsed = await extractWithAI(rawText);
+    const parsed = await extractWithAI(rawText, filename);
     
     // Generate embedding for Semantic Search
     const embedding = await generateEmbedding(rawText);
@@ -175,7 +179,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (['.pdf', '.docx', '.txt'].includes(parseExt)) {
-            parsed = await extractDocumentData(parseBuffer, parseExt)
+            parsed = await extractDocumentData(parseBuffer, parseExt, displayName)
         }
 
         const finalFolder = (folder === 'Uncategorized' && parsed.suggestedFolder) 

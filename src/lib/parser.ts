@@ -40,12 +40,12 @@ const SKILL_KEYWORDS = [
   'Git','REST','Microservices','Agile','Scrum','Figma','Jira','Postman','VS Code',
 ]
 
-export function parseResume(rawText: string): ParsedResume {
+export function parseResume(rawText: string, filename?: string): ParsedResume {
   const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean)
   const text = rawText
 
   return {
-    name: extractName(lines),
+    name: extractName(lines, filename),
     email: extractEmail(text),
     phone: extractPhone(text),
     skills: extractSkills(text),
@@ -56,7 +56,19 @@ export function parseResume(rawText: string): ParsedResume {
   }
 }
 
-function extractName(lines: string[]): string {
+function extractName(lines: string[], filename?: string): string {
+  // First, check if the filename gives a strong hint
+  if (filename) {
+      // Remove extensions and common resume words
+      let cleanName = filename.replace(/\.(pdf|docx|txt|zip)$/i, '')
+      cleanName = cleanName.replace(/(_|-|\s)*(resume|cv|profile|updated|latest|draft)(_|-|\s)*/ig, ' ')
+      cleanName = cleanName.replace(/_+|-+/g, ' ').trim()
+      // If the remaining name looks like a real name (2-3 words, no numbers)
+      if (cleanName.length > 3 && cleanName.length < 40 && !/\d/.test(cleanName) && cleanName.includes(' ')) {
+          return toTitleCase(cleanName)
+      }
+  }
+
   // Name is usually in the first 8 non-empty lines, all caps or title case, no special chars
   for (const line of lines.slice(0, 10)) {
     const cleaned = line.trim()
