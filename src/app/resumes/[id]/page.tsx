@@ -4,8 +4,9 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, Star, Mail, Phone, Briefcase, GraduationCap,
-  Tag, Edit3, Save, X, Trash2, Download, Loader2, User, Calendar, FileText
+  Tag, Edit3, Save, X, Trash2, Download, Loader2, User, Calendar, FileText, MessageSquare, Send
 } from 'lucide-react'
+import { createBrowserClient } from '@supabase/ssr'
 
 interface Resume {
   id: number; filename: string; original_name: string; file_size: number; mime_type: string
@@ -27,14 +28,35 @@ export default function ResumeDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editingNotes, setEditingNotes] = useState(false)
-  const [notes, setNotes] = useState('')
+  const [remarks, setRemarks] = useState<any[]>([])
+  const [newRemark, setNewRemark] = useState('')
+  const [currentUser, setCurrentUser] = useState<string>('Recruiter')
   const [editingStatus, setEditingStatus] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview'|'raw'|'preview'>('overview')
+
+  const supabase = createBrowserClient(
+     process.env.NEXT_PUBLIC_SUPABASE_URL!,
+     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+       if (session) setCurrentUser(session.user.user_metadata?.full_name || session.user.email || 'Recruiter')
+    })
+  }, [supabase])
 
   useEffect(() => {
     fetch(`/api/resumes/${id}`)
       .then(r => r.json())
-      .then(data => { setResume(data); setNotes(data.notes || '') })
+      .then(data => { 
+          setResume(data)
+          try {
+             setRemarks(JSON.parse(data.notes || '[]'))
+          } catch (e) {
+             if (data.notes) setRemarks([{ author: 'Legacy Note', text: data.notes, date: new Date().toISOString() }])
+             else setRemarks([])
+          }
+      })
       .finally(() => setLoading(false))
   }, [id])
 
@@ -51,7 +73,14 @@ export default function ResumeDetailPage() {
 
   const setRating = (r: number) => patch({ rating: r })
   const setStatus = (s: string) => { patch({ status: s }); setEditingStatus(false) }
-  const saveNotes = () => { patch({ notes }); setEditingNotes(false) }
+  
+  const submitRemark = async () => {
+     if (!newRemark.trim()) return
+     const updatedRemarks = [...remarks, { author: currentUser, text: newRemark.trim(), date: new Date().toISOString() }]
+     await patch({ notes: JSON.stringify(updatedRemarks) })
+     setRemarks(updatedRemarks)
+     setNewRemark('')
+  }
 
   const deleteResume = async () => {
     if (!confirm('Delete this resume permanently?')) return
@@ -303,7 +332,43 @@ export default function ResumeDetailPage() {
                        <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{stat.label}</span>
                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight">{stat.value}</span>
                     </div>
-                  ))}
+                   ))}
+               </div>
+            </div>
+
+            {/* Recruiter Remarks Section */}
+            <div className="glass rounded-[32px] p-8 border-white/5 shadow-2xl flex flex-col max-h-[500px]">
+               <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                 <MessageSquare size={14} /> Recruiter Remarks
+               </h3>
+               
+               <div className="flex-1 overflow-y-auto space-y-4 pr-2 mb-6 scrollbar-hide">
+                 {remarks.length === 0 ? (
+                   <p className="text-[10px] text-slate-700 font-bold uppercase tracking-widest text-center py-6 italic">No remarks strictly recorded</p>
+                 ) : (
+                   remarks.map((rmk, idx) => (
+                     <div key={idx} className="bg-white/[0.02] p-4 rounded-2xl border border-white/5 relative">
+                        <div className="flex items-center justify-between mb-1.5">
+                           <span className="text-[10px] font-black text-brand-400">{rmk.author}</span>
+                           <span className="text-[9px] text-slate-600 font-bold">{new Date(rmk.date).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-xs text-slate-300 font-medium leading-relaxed">{rmk.text}</p>
+                     </div>
+                   ))
+                 )}
+               </div>
+
+               <div className="pt-4 border-t border-white/5 shrink-0 flex gap-2">
+                 <input 
+                   value={newRemark}
+                   onChange={e => setNewRemark(e.target.value)}
+                   onKeyDown={e => e.key === 'Enter' && submitRemark()}
+                   placeholder="Add a profile remark..."
+                   className="input-dark py-2.5 px-4 rounded-xl text-sm flex-1"
+                 />
+                 <button onClick={submitRemark} disabled={saving} className="bg-brand-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-brand-500 transition-all shadow-lg shrink-0">
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                 </button>
                </div>
             </div>
           </div>

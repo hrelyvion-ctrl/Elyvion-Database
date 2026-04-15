@@ -24,6 +24,7 @@ interface Resume {
   original_name: string
   filename: string
   folder: string
+  match_score?: number
 }
 
 const STATUS_OPTIONS = ['all','new','reviewed','shortlisted','rejected','hired']
@@ -549,6 +550,7 @@ function ResumesContent() {
                   <th className="px-4 py-6 text-left w-[240px]">Candidate</th>
                   <th className="px-4 py-6 text-left">Primary Stack</th>
                   <th className="px-4 py-6 text-left w-[80px]">Exp</th>
+                  <th className="px-4 py-6 text-left w-[120px]">Match</th>
                   <th className="px-4 py-6 text-left w-[120px]">Rating</th>
                   <th className="px-4 py-6 text-left w-[120px]">Status</th>
                   <th className="px-4 py-6 text-left w-[120px]">Registered</th>
@@ -603,6 +605,13 @@ function ResumesContent() {
                       </td>
                       <td className="px-4 py-5 whitespace-nowrap">
                         <span className="text-xs font-bold text-slate-300">{r.experience_years}y</span>
+                      </td>
+                      <td className="px-4 py-5">
+                        {r.match_score ? (
+                          <div className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase inline-block border ${r.match_score > 80 ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-brand-500/10 text-brand-400 border-brand-500/20'}`}>
+                            {r.match_score}% Match
+                          </div>
+                        ) : <span className="text-slate-700 text-xs">-</span>}
                       </td>
                       <td className="px-4 py-5">
                         <div className="flex gap-0.5">

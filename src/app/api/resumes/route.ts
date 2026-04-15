@@ -70,14 +70,34 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    // Apply Legacy Skill filter
-    if (skill) query = query.ilike('parsed_skills', `%${skill}%`)
+    // Apply Global Quick Search (skill param from UI quick search box)
+    if (skill) {
+        query = query.or(`parsed_skills.ilike.%${skill}%,parsed_name.ilike.%${skill}%,parsed_email.ilike.%${skill}%,raw_text.ilike.%${skill}%`)
+    }
 
-    const { data: resumes, error, count } = await query
+    let { data: resumes, error, count } = await query
       .order(safeSort, { ascending: order })
       .range(offset, offset + limit - 1)
 
     if (error) throw new Error(error.message)
+
+    // Calculate dynamic "AI Match Score" if a search query exists
+    if (resumes && (skill || keywords || location)) {
+        const queryParts = [skill, keywords, location].filter(Boolean).join(' ').toLowerCase().split(/\s+/)
+        resumes = resumes.map((r: any) => {
+           let score = 50 // Base score
+           const txt = (r.raw_text + ' ' + r.parsed_skills + ' ' + r.parsed_name).toLowerCase()
+           let hits = 0
+           for (const q of queryParts) {
+               if (txt.includes(q)) hits++
+           }
+           score += hits * 18
+           if (r.experience_years >= minExp && r.experience_years <= maxExp) score += 10
+           if (score > 99) score = 99
+           if (hits === 0 && score > 70) score = 65 // Penalize if no direct hits
+           return { ...r, match_score: Math.round(score) }
+        })
+    }
 
     return NextResponse.json({
       resumes: resumes || [],
