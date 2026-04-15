@@ -64,7 +64,7 @@ async function extractWithAI(rawText: string, filename: string) {
       }
 
       CRITICAL EXTRACTION RULES (Current Date: April 2026):
-      1. NAME: Extract ONLY the candidate's clean First and Last name. CRITICAL: Completely IGNORE and REMOVE any appended text, job titles, brackets, parens, symbols, or designations (e.g., if the text says "(Spencer Corn)", output "Spencer Corn". If it says "Satish Babu Karra Supplier Qe" or "Dr. John Doe", output "Satish Babu Karra" or "John Doe"). Do NOT extract document titles like "RESUME" or "CV".
+      1. NAME: Use Named Entity Recognition (NER) to locate ONLY the human candidate's actual First and Last name. Output ONLY proper nouns (e.g., "John Doe"). Never output words that describe documents (Resume, Portfolio, CV) or job titles (Engineer, Director). If the text is "PORTFOLIO ESHA NAIR", you must output ONLY "Esha Nair".
       2. EXPERIENCE YEARS: Calculate 'experienceYears' as a single decimal (e.g., 3.5). Sum up all unique professional work durations ONLY from the "Work Experience" or "Professional Experience" sections. 
       3. CRITICAL EXPERIENCE RULE: Do NOT include ANY dates or durations found in "Education", "Certifications", "Academic Profile", or High School/University sections. Those do NOT count towards professional experience.
       4. HANDLING "PRESENT": If a job says "to Present" or "to Current", use April 2026 as the end date.
