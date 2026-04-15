@@ -78,8 +78,16 @@ async function extractWithAI(rawText: string, filename: string) {
     
     // Clean JSON response (GEMINI sometimes wraps in ```json ... ```)
     const cleanJson = text.replace(/```json|```/g, '').trim()
-    return JSON.parse(cleanJson)
-    return JSON.parse(cleanJson)
+    const parsed = JSON.parse(cleanJson)
+    
+    if (parsed.name) {
+       parsed.name = parsed.name
+          .replace(/^(PORTFOLIO|RESUME|CV|CURRICULUM VITAE|PROFILE|CANDIDATE)[\s\-:]+/i, '')
+          .replace(/[\s\-:]+(PORTFOLIO|RESUME|CV|CURRICULUM VITAE|PROFILE|CANDIDATE)$/i, '')
+          .trim()
+    }
+    
+    return parsed
   } catch (err) {
     console.error('Gemini Parse Error, falling back to Regex:', err)
     return parseResume(rawText, filename) // Fallback to our local parser
@@ -215,12 +223,13 @@ export async function POST(req: NextRequest) {
 
         // 4. AUDIT LOGGING: Record the upload
         if (session) {
-           await supabaseServer.from('audit_logs').insert({
+           const { error: logError } = await supabaseServer.from('audit_logs').insert({
               user_id: session.user.id,
               user_name: session.user.user_metadata?.full_name || session.user.email,
               action: 'upload',
               details: { filename: file.name, folder: finalFolder, resume_id: data.id }
            })
+           if (logError) console.error("Audit log upload error:", logError)
         }
 
         results.push({ name: file.name, status: 'success', id: data.id })

@@ -146,12 +146,13 @@ export async function DELETE(req: NextRequest) {
     
     // 2. AUDIT LOGGING: Record the deletion
     if (session) {
-       await supabaseServer.from('audit_logs').insert({
+       const { error: logError } = await supabaseServer.from('audit_logs').insert({
           user_id: session.user.id,
           user_name: session.user.user_metadata?.full_name || session.user.email,
           action: 'delete',
           details: { count: ids.length, ids }
        })
+       if (logError) console.error("Audit log deletion error:", logError)
     }
 
     if (error) throw error
